@@ -2,10 +2,12 @@
 title: 'Natural Language Processing: A Model to Predict a Sequence of Words'
 author: "Gerald Gendron"
 date: "October 13, 2014"
-output: html_document
+output:
+  html_document:
+    toc: yes
 ---
 
-### Executive Summary
+## Executive Summary
 
 This report provides documentation describing the process and decisions used to develop a predictive text model for the Data Science Capstone project. All code used in the development of the project is contained in this report. The main body of the report provides the essential discussion of the product development story by summarizing key aspects of the analysis and model building. Key learning points are included to aid readers interested in reproducing this work and enhancing it. Overall, the discipline of Natural Language Processing is a broad and useful domain of data science. This report includes a brief literature review capturing key concepts that guided this project. The corpus used in this analysis might be considered to have a personality – specifically, that it is a unique collection of words, phrases, and sentences that has been characterized by some exploratory analysis to become familiar with what the corpus is and how it may be used for prediction. The initial model created from a small subset of the corpus was useful but did not enable scalability. Additional research, creative thinking, and persistent modeling alterations resulted in a predictive text model that balanced accuracy with scalability. The model described in this report was ultimately hosted as a web-based application for consumer use and allows some customization of results by users. 
 
@@ -785,17 +787,17 @@ predict <-function(input,cluster=7){
 This is the R Markdown document for the Capstone project.
 
 
-### Acknowledgements
+## Acknowledgements
 First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
 
-### References
+## References
 Jurafsky, D. and Martin, J.H. (2000). *Speech and language processing: An introduction to natural language processing, computational linguistics and speech recognition*. Englewood Cliffs, NJ: Prentice Hall.
 
 Richards, B. (1987). Type/token ratios:What do they really tell us? Journal of Child Language, 14, pp. 201209. Doi: 10:1017/S0305000900012885.
 
 
 ******
-### Appendix A - Generating Training and Testing Sets
+## Appendix A - Generating Training and Testing Sets
 
 ``` {r A-createDataSubsets, echo=TRUE, eval=FALSE, warning=FALSE,error=FALSE,cache=TRUE}
 ##
@@ -864,7 +866,7 @@ rm(list = ls()) #clean environment
 ```
 
 ******
-### Appendix B - Reading in the Data and Cleaning
+## Appendix B - Reading in the Data and Cleaning
 
 ``` {r B-readTraininSettoClean, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 #
@@ -950,9 +952,9 @@ write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
 ```
 
 ******
-### Appendix C - Prototype Modeling - Building N-Gram Models
+## Appendix C - Prototype Modeling - Building N-Gram Models
 
-#### C-1: Building the 1-Gram (unigram) Model
+### C-1: Building the 1-Gram (unigram) Model
 
 ``` {r C1-buildOneGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
@@ -990,7 +992,7 @@ rm(unigramDF,uni.freqfreq,CORP,myCorpus)
 ```
 
 
-#### C-2: Building the 2-Gram (bigram) Model
+### C-2: Building the 2-Gram (bigram) Model
 ``` {r C2-buildTwoGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Code uses blogTrain.txt to generate list of all 2-grams (bigrams)
@@ -1057,7 +1059,7 @@ write.csv(bi.freqfreq,"bi-freqfreq.csv")
 rm(bi.freqfreq,twogramDF)
 ```
 
-#### C-3: Building the 3-Gram (trigram) Model
+### C-3: Building the 3-Gram (trigram) Model
 ``` {r C3-buildThreeGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Code uses blogTrain.txt to generate list of all 3-grams (trigrams)
@@ -1346,7 +1348,7 @@ rm(S1,S2)
 ```
 
 ******
-#### Appendix D - Implementing Good-Turing Smoothing
+## Appendix D - Implementing Good-Turing Smoothing
 
 ``` {r D-generateGTmatrix, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
@@ -1429,7 +1431,7 @@ rm(list=ls())
 ```
 
 ******
-#### Appendix E - Prediction Model
+## Appendix E - Prediction Model
 
 ``` {r E-predictingngramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ########
@@ -1585,7 +1587,7 @@ predict <-function(input,cluster=7){
 ```
 
 ******
-#### Appendix F - Glossary of Key Terms
+## Appendix F - Glossary of Key Terms
 
 **Good-Turing Discounting:** Termed Good-Turing smoothing, it is a technique to re-estimate probability mass to assign N-Grams with zero or low counts by discounting from those occurring more often.")
 
@@ -1596,7 +1598,7 @@ predict <-function(input,cluster=7){
 **N-Gram cluster:** In calculating N-Grams, many probabilities are actually counts based on Good-Turing Discounting. A cluster is a group of words (sometimes a large number) having the same likelihood of appearing in the prediction model.
 
 ******
-#### Appendix H - Development Platform Information
+## Appendix G - Development Platform Information
 
 ``` {r H-sysInfo, echo=TRUE}
 sessionInfo()
