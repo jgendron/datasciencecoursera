@@ -1,0 +1,1603 @@
+---
+title: 'Natural Language Processing: A Model to Predict a Sequence of Words'
+author: "Gerald Gendron"
+date: "October 13, 2014"
+output: html_document
+---
+
+### Executive Summary
+
+This report provides documentation describing the process and decisions used to develop a predictive text model for the Data Science Capstone project. All code used in the development of the project is contained in this report. The main body of the report provides the essential discussion of the product development story by summarizing key aspects of the analysis and model building. Key learning points are included to aid readers interested in reproducing this work and enhancing it. Overall, the discipline of Natural Language Processing is a broad and useful domain of data science. This report includes a brief literature review capturing key concepts that guided this project. The corpus used in this analysis might be considered to have a personality – specifically, that it is a unique collection of words, phrases, and sentences that has been characterized by some exploratory analysis to become familiar with what the corpus is and how it may be used for prediction. The initial model created from a small subset of the corpus was useful but did not enable scalability. Additional research, creative thinking, and persistent modeling alterations resulted in a predictive text model that balanced accuracy with scalability. The model described in this report was ultimately hosted as a web-based application for consumer use and allows some customization of results by users. 
+
+*Keywords: natural language processing, text mining, predictive text analytics, N-Gram, Good-Turing Smoothing, Katz back off*
+
+``` {r 0-createDataSubsets, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Create data subsets from original datasets provided
+##
+library(tm) # Use tm package
+# Read in three English text data sets already extracted from .zip file
+# Used virtual corpus for this interim work
+tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"),
+                 readerControl=list(language="en"))
+blog <- VCorpus(DirSource("blogs", encoding = "UTF-8"),
+                readerControl=list(language="en"))
+news <- VCorpus(DirSource("news", encoding = "UTF-8"),
+                readerControl=list(language="en"))
+########
+## Approach to split corpora into train, devtest, and test sets
+########
+
+# Permute entire tweet group to randomize order
+set.seed(0330)
+perm.tweet <- sample(tweet[[2]][[1]], length(tweet[[2]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.tweet))
+twtTrain <- perm.tweet[1:TR]
+remain<-perm.tweet[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+twtDevtest <- remain[1:DEV]
+twtTest <- remain[-(1:DEV)]
+write(twtTrain,"twtTrain.txt")
+write(twtDevtest,"twtDevtest.txt")
+write(twtTest,"twtTest.txt")
+rm(list = ls()) #clean environment
+
+# Permute entire blog group to randomize order                     
+set.seed(0330)
+perm.blog <- sample(blog[[1]][[1]], length(blog[[1]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.blog))
+blogTrain <- perm.blog[1:TR]
+remain<-perm.blog[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+blogDevtest <- remain[1:DEV]
+blogTest <- remain[-(1:DEV)]
+write(blogTrain,"blogTrain.txt")
+write(blogDevtest,"blogDevtest.txt")
+write(blogTest,"blogTest.txt")
+rm(list = ls()) #clean environment
+
+# Permute entire news group to randomize order   
+set.seed(0330)
+perm.news <- sample(news[[1]][[1]], length(news[[1]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.news))
+newsTrain <- perm.news[1:TR]
+remain<-perm.news[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+newsDevtest <- remain[1:DEV]
+newsTest <- remain[-(1:DEV)]
+write(newsTrain,"newsTrain.txt")
+write(newsDevtest,"newsDevtest.txt")
+write(newsTest,"newsTest.txt")
+rm(list = ls()) #clean environment
+```
+
+``` {r 1-readTraininSettoClean, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+#
+## Read in dataset and clean for use
+##
+library(tm)   # package used to read dataset
+library(filehash) # package used to update/maintain permanent corpus database
+myCorpus <- PCorpus(DirSource("training", #training contains blog 60% training set
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+##
+## Cleaning steps refined  over time
+## Accomplished in three loops due to RAM limitations
+##
+
+# to lower case
+myCorpus <- tm_map(myCorpus, content_transformer(tolower));dbInit("myCorpus.db")
+
+for (j in seq(myCorpus)) {
+     # first two separate hyphenated and slashed words
+     myCorpus[[j]][[1]] <-gsub("-", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("/", " ", myCorpus[[j]][[1]])
+     # converts symbol <> into an apostrophe
+     myCorpus[[j]][[1]] <-gsub("<>", "\\'", myCorpus[[j]][[1]])
+     print("3 of 18 transformations complete") #provides progress to user
+     # these three create end of sentence markers <EOS>
+     myCorpus[[j]][[1]] <-gsub("\\. |\\.$","  <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\? |\\?$","  <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\! |\\!$","  <EOS> ", myCorpus[[j]][[1]])
+     print("6 of 18 transformations complete") #provides progress to user
+}
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # writes corpus to permanent disc
+# reads back in corpus...this method reduced 908MB corpus to 137MB
+myCorpus <- PCorpus(DirSource("mod", 
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
+
+for (j in seq(myCorpus)) {
+     # tranforms various ASCII codes to appropriate language 
+     myCorpus[[j]][[1]] <-gsub("<85>"," <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("<92>","'", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\&", " and ", myCorpus[[j]][[1]])
+     print("9 of 18 transformations complete") #provides progress to user
+     # removes all punctuation except apostrophe and <> symbols in <EOS>
+     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ", myCorpus[[j]][[1]])
+     # removes web site URLs
+     myCorpus[[j]][[1]] <-gsub(" www(.+) ", " ", myCorpus[[j]][[1]])
+     # removes all single letters except "a" and "i"
+     myCorpus[[j]][[1]] <-gsub(" [b-hj-z] "," ", myCorpus[[j]][[1]])
+     print("12 of 18 transformations complete") #provides progress to user
+}
+
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to permanent disc
+# reduced 937 MB corpus to 133 MB
+myCorpus <- PCorpus(DirSource("mod",
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db", dbType="DB1"))
+
+for (j in seq(myCorpus)) {
+     # removes errant apostrohes introduced by transformations
+     myCorpus[[j]][[1]] <-gsub(" ' "," ", myCorpus[[j]][[1]])        
+     myCorpus[[j]][[1]] <-gsub("\\' ", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub(" ' ", " ", myCorpus[[j]][[1]])
+     print("15 of 18 transformations complete") #provides progress to user
+     # removes errant codes in < > brackets
+     myCorpus[[j]][[1]] <-gsub("<[^EOS].+>"," ", myCorpus[[j]][[1]])
+     # replaces numbers with a number marker <NUM> for context
+     myCorpus[[j]][[1]] <-gsub("[0-9]+"," <NUM> ", myCorpus[[j]][[1]])
+     # removes and errant <> brackets remaining
+     myCorpus[[j]][[1]] <-gsub("<>"," ", myCorpus[[j]][[1]])
+     print("18 of 18 transformations complete") #provides progress to user
+}
+# removes numbers and the tm package "dbInit" compresses data in RAM
+myCorpus <- tm_map(myCorpus, removeNumbers);dbInit("lastCorpus.db")
+# removes errant 's symbols not as contractions
+myCorpus[[1]][[1]] <-gsub(" 's"," ", myCorpus[[1]][[1]])
+# removes errant close brackets starting a word
+myCorpus[[1]][[1]] <-gsub(">[a-z]"," ", myCorpus[[1]][[1]])
+
+myCorpus <- tm_map(myCorpus, stripWhitespace);dbInit("lastCorpus.db")
+# final corpus after all processing only 111 MB
+
+# Writes final, processed corpus to disc for building n-grams
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
+# original training set 130 MB; clean training seet 108 MB
+```
+
+``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
+##
+## Code uses blogTrain.txt to generate list of all 1-gram (unigrams)
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="aggCorpus.db", dbType="DB1"))
+
+library(tau) #package to create N-Grams
+ngram <- function(n) {
+     textcnt(CORP, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]]) #pulls out the text element from the list myCorpus
+
+oneGram <- ngram(1)
+unigramDF<-data.frame(Uni = names(oneGram), counts = unclass(oneGram))
+rm(oneGram)
+unigramDF$Uni<-as.character(unigramDF$Uni)
+unigramDF$counts<-as.numeric(unigramDF$counts)
+# removes the "words" <eos> and <num> from unigram table
+unigramDF <- unigramDF[which(unigramDF$Uni!="<eos>"),]
+unigramDF <- unigramDF[which(unigramDF$Uni!="<num>"),]
+
+lengthUni<-length(unigramDF$Uni) #253,921 unigrams
+
+# Builds frequency of frequency table for Good-Turing smoothing
+uni.freqfreq<-data.frame(Uni=table(unigramDF$counts))
+
+write.csv(unigramDF,"unigramDF.csv") #2,620 frequencies
+write.csv(uni.freqfreq,"uni.freqfreq.csv")
+rm(unigramDF,uni.freqfreq,CORP,myCorpus)
+```
+
+``` {r 3-buildTwoGramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Code uses blogTrain.txt to generate list of all 2-grams (bigrams)
+## Specifically designed to break large corpus into chunks to deal
+## with limitations imposed by RAM in R
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="biCorpus.db", dbType="DB1"))
+library(tau) #package to create N-Grams
+ngram <- function(n) {
+     textcnt(CORPport, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]]) #pulls out the text element from the list myCorpus
+rm(myCorpus) #reduce RAM load
+# determine number of loop runs to process 10,000 docs per run
+step<-trunc(length(CORP)/10000)
+remain<- length(CORP)-(step * 10000)
+# first deal with the remainder
+CORPport<-CORP[1:remain]
+# invokes tau package to build the bigrams
+twoGram <- ngram(2)
+names(twoGram) <- gsub("^\'","",names(twoGram))        
+twogramDF<-data.frame(Bi = names(twoGram), counts = unclass(twoGram))
+names(twogramDF)<-c("Bi","counts")
+## removes the "words" <eos> and <num> from unigram table
+eosTag<-grepl("<eos>",twogramDF$Bi)
+twogramDF<-twogramDF[!eosTag,]
+numTag<-grepl("<num>",twogramDF$Bi)
+twogramDF<-twogramDF[!numTag,]
+# writes first of N:n=step dataframes
+write.csv (twogramDF,"twoGramDF1.csv")
+CORP<-CORP[-(1:remain)] #remove already processed docs from corpus
+
+for (i in 1:(step-1)) {  # loop to process steps of 10000 docs
+     CORPport<-CORP[1:10000]
+     twoGram <- ngram(2)
+     names(twoGram) <- gsub("^\'","",names(twoGram))        
+     tmptwogramDF<-data.frame(Bi = names(twoGram), counts = unclass(twoGram))
+     print(paste("Iteration",i,"of",step)) #provide user progress
+     name<-paste("twoGramDF",(i+1),".csv",sep="")
+     ## removes the "words" <eos> and <num> from unigram table
+     eosTag<-grepl("<eos>",tmptwogramDF$Bi)
+     tmptwogramDF<-tmptwogramDF[!eosTag,]
+     numTag<-grepl("<num>",tmptwogramDF$Bi)
+     tmptwogramDF<-tmptwogramDF[!numTag,]
+     write.csv (tmptwogramDF,name)
+     twogramDF<-rbind(twogramDF,tmptwogramDF)
+     twogramDF<-aggregate(twogramDF$counts,list(Bi=twogramDF$Bi),sum)
+     names(twogramDF)<-c("Bi","counts")
+     CORP<-CORP[-(1:10000)]
+}
+rm(tmptwogramDF,numTag,eosTag,ngram,CORPport,twoGram)
+rm(remain,step,name,i,CORP)
+twogramDF$Bi<-as.character(twogramDF$Bi)
+twogramDF$counts<-as.numeric(twogramDF$counts)
+twogramDF$Uni<-sub(" .*","",twogramDF$Bi)
+# Builds frequency of frequency table for Good-Turing smoothing
+bi.freqfreq<-data.frame(Bi=table(twogramDF$counts))
+write.csv(twogramDF,"twogramDF.csv")
+write.csv(bi.freqfreq,"bi-freqfreq.csv")
+rm(bi.freqfreq,twogramDF)
+```
+
+``` {r 4-buildThreeGramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Code uses blogTrain.txt to generate list of all 3-grams (trigrams)
+## Specifically designed to break large corpus into chunks to deal
+## with limitations imposed by RAM in R
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="triCorpus.db", dbType="DB1"))
+library(tau)
+ngram <- function(n) {
+     textcnt(CORPport, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]])
+rm(myCorpus) #reduce RAM load
+# determine number of loop runs to process 10,000 docs per run
+step<-trunc(length(CORP)/10000)
+for (i in 1:(step)) {
+     CORPport<-CORP[1:10000]
+     # invokes tau package to build the trigrams
+     threeGram <- ngram(3)
+     names(threeGram) <- gsub("^\'","",names(threeGram))
+     threegramDF<-data.frame(Tri = names(threeGram), counts = unclass(threeGram))
+     print(paste("Iteration",i,sep=" "))
+     name<-paste("threeGramDF",i,".csv",sep="")
+     ## removes the "words" <eos> and <num> from trigram table
+     eosTag<-grepl("<eos>",threegramDF$Tri)
+     threegramDF<-threegramDF[!eosTag,]
+     numTag<-grepl("<num>",threegramDF$Tri)
+     threegramDF<-threegramDF[!numTag,]
+     # writes first of N:n=step dataframes
+     write.csv (threegramDF,name)
+     CORP<-CORP[-(1:10000)]
+}
+CORPport<-CORP
+# repeats above loop for the remaining documents (partial step)
+threeGram <- ngram(3)
+names(threeGram) <- gsub("^\'","",names(threeGram))
+threegramDF<-data.frame(Tri = names(threeGram), counts = unclass(threeGram))
+names(threegramDF)<-c("Tri","counts")
+name<-paste("threeGramDF",i+1,".csv",sep="")
+eosTag<-grepl("<eos>",threegramDF$Tri)
+threegramDF<-threegramDF[!eosTag,]
+numTag<-grepl("<num>",threegramDF$Tri)
+threegramDF<-threegramDF[!numTag,]
+write.csv (threegramDF,name)
+
+rm(threegramDF, CORP,CORPport,threeGram,i,name)
+
+#####
+## Begin aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (k in seq(1,46,5)) {
+     key<-paste("threeGramDF",k,".csv",sep="")
+     print(k)
+     threeGramDF <-read.csv(file = key)
+     threeGramDF<-threeGramDF[,-1]
+     for (m in 1:4) {
+          name<-paste("threeGramDF",(k+m),".csv",sep="")
+          temp <- read.csv(name)
+          temp<-temp[,-1]
+          threeGramDF <- merge(threeGramDF,temp, by.x="Tri",by.y="Tri", all=TRUE)
+          print(k+m)
+          rm(temp)
+     }
+     out<-paste("mergedTri",k,".csv",sep="")
+     counts<-threeGramDF[,2:ncol(threeGramDF)]
+     threeGramDF$counts<-rowSums(counts,na.rm=TRUE)
+     threeGramDF<-threeGramDF[,-(2:(ncol(threeGramDF)-1))]
+     write.csv(threeGramDF,out)
+     rm(threeGramDF,counts)
+}
+
+k=k+5
+
+key<-paste("threeGramDF",k,".csv",sep="")
+print(k)
+threeGramDF <-read.csv(file = key)
+threeGramDF<-threeGramDF[,-1]
+for (m in 1:3) {
+     name<-paste("threeGramDF",(k+m),".csv",sep="")
+     temp <- read.csv(name)
+     temp<-temp[,-1]
+     threeGramDF <- merge(threeGramDF,temp, by.x="Tri",by.y="Tri", all=TRUE)
+     print(k+m)
+     rm(temp)
+}
+out<-paste("mergedTri",k,".csv",sep="")
+counts<-threeGramDF[,2:ncol(threeGramDF)]
+threeGramDF$counts<-rowSums(counts,na.rm=TRUE)
+threeGramDF<-threeGramDF[,-(2:(ncol(threeGramDF)-1))]
+write.csv(threeGramDF,out)
+rm(threeGramDF,counts)
+
+#####
+## continue aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (p in c(1,11,21,31,41)) {
+     m1<-paste("mergedTri",p,".csv",sep="")
+     m6<-paste("mergedTri",(p+5),".csv",sep="")
+     print(m1)
+     print(m6)
+     m1<-read.csv(m1)[,-1]
+     m6<-read.csv(m6)[,-1]
+     super <- merge(m1,m6, by.x="Tri",by.y="Tri", all=TRUE)
+     rm(m1,m6)
+     counts<-super[,2:ncol(super)]
+     super$counts<-rowSums(counts,na.rm=TRUE)
+     super<-super[,-(2:(ncol(super)-1))]
+     supOut<-paste("superTri",p,".csv",sep="")
+     write.csv(super,supOut)
+     rm(super,counts)
+}        
+
+superTri51<-read.csv("mergedTri51.csv")[,-1]
+write.csv(superTri51,"superTri51.csv")
+rm(superTri51)
+
+#####
+## Continue aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (p in c(1,21,41)) {
+     m1<-paste("superTri",p,".csv",sep="")
+     m6<-paste("superTri",(p+10),".csv",sep="")
+     print(m1)
+     print(m6)
+     m1<-read.csv(m1)[,-1]
+     m6<-read.csv(m6)[,-1]
+     super <- merge(m1,m6, by.x="Tri",by.y="Tri", all=TRUE)
+     rm(m1,m6)
+     counts<-super[,2:ncol(super)]
+     super$counts<-rowSums(counts,na.rm=TRUE)
+     super<-super[,-(2:(ncol(super)-1))]
+     supOut<-paste("superTri2-",p,".csv",sep="")
+     write.csv(super,supOut)
+     rm(super,counts)
+} 
+
+#####
+## First of final 2 aggregating processes to develop one trigram dataframe
+#####
+
+A<-read.csv("superTri2-1.csv")[,-1]
+AtwoPlus<-A[which(A$counts>=2),]
+Asingles<-A[which(A$counts==1),]
+rm(A)
+
+B<-read.csv("superTri2-21.csv")[,-1]
+BtwoPlus<-B[which(B$counts>=2),]
+Bsingles<-B[which(B$counts==1),]
+rm(B)
+
+# creates aggregated dataframes for singleton trigrams and all others
+threegramDF <- merge(AtwoPlus,BtwoPlus, by.x="Tri",by.y="Tri", all=TRUE)
+rm(AtwoPlus,BtwoPlus)
+write.csv(threegramDF,"threegramDF.csv")
+rm(threegramDF)
+singles <-merge(Asingles,Bsingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(Asingles,Bsingles)
+write.csv(singles,"interimABsingles.csv")
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri1.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+rm(singleBlend)
+
+half<-trunc(length(singles$counts)/2)
+half2<-length(singles$counts)-half
+
+singlesFirstHalf<-singles[1:half,]
+write.csv(singlesFirstHalf,"firstHalf.csv")
+rm(singlesFirstHalf)
+singlesSecondHalf<-singles[-(1:half),]
+rm(singles)
+write.csv(singlesSecondHalf,"secondHalf.csv")
+
+#####
+## Second of final 2 aggregating processes to develop one trigram dataframe
+#####
+
+C<-read.csv("superTri2-41.csv")[,-1]
+CtwoPlus<-C[which(C$counts>=2),]
+Csingles<-C[which(C$counts==1),]
+rm(C)
+
+threegramDF<-read.csv("threegramDF.csv")
+threegramDF<-threegramDF[,-1]
+threegramDF <- merge(threegramDF,CtwoPlus, by.x="Tri",by.y="Tri", all=TRUE)
+rm(CtwoPlus)
+counts<-threegramDF[,2:ncol(threegramDF)]
+threegramDF$counts<-rowSums(counts,na.rm=TRUE)
+threegramDF<-threegramDF[,-(2:(ncol(threegramDF)-1))]
+rm(counts)
+write.csv(threegramDF,"threegramDF.csv")
+rm(threegramDF)
+
+singles <-merge(singlesSecondHalf,Csingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(singlesSecondHalf)
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri2.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+write.csv(singles,"halfRealsingles2.csv")
+rm(singleBlend,singles)
+
+firstHalf<-read.csv("firstHalf.csv")
+firstHalf<-firstHalf[,-1]
+singles <-merge(firstHalf,Csingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(Csingles,firstHalf)
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri3.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+rm(singleBlend)
+write.csv(singles,"halfRealSingles1.csv")
+rm(singles)
+
+####
+## Bind all work together
+####
+
+threegramDF<-read.csv("threegramDF.csv")
+threegramDF<-threegramDF[,-1]
+one<-read.csv("add2Tri1.csv")
+one<-one[-1]
+threegramDF<-rbind(threegramDF,one)
+rm(one)
+two<-read.csv("add2Tri2.csv")
+two<-two[-1]
+threegramDF<-rbind(threegramDF,two)
+rm(two)
+three<-read.csv("add2Tri3.csv")
+three<-three[-1]
+threegramDF<-rbind(threegramDF,three)
+rm(three)
+### Resultant trigram dataframe
+write.csv(threegramDF,"threegramDF.csv")
+
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram)
+rm(bigram)
+threegramDF$Uni<-sub(".* ","",threegramDF$Bi)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri) # provides the suggested word
+# Builds frequency of frequency table for Good-Turing smoothing
+tri.freqfreq <- data.frame(Tri=table(threegramDF$counts))
+write.csv(threegramDF[,-1],"threegramDF.csv")
+write.csv(tri.freqfreq,"tri-freqfreq.csv")
+rm(tri.freqfreq,threegramDF) 
+
+####
+## create dataframe of singleton trigrams
+####
+S1<-read.csv("halfRealSingles1.csv")
+S1<-S1[,-1]
+S2<-read.csv("halfRealSingles2.csv")
+S2<-S2[,-1]
+S1<-rbind(S1,S2)
+write.csv(S1,"singleTriGrams.csv")
+rm(S1,S2)
+```
+
+``` {r 5-generateGTmatrix, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Generates Good-Turing matrix for prediction model
+##
+# build empty matrix
+GTCount<-matrix(c(seq(0,6,1),rep(0,21)),nrow=7,ncol=4,
+                dimnames = list(c(seq(0,6,1)),c("count","uni","bi","tri")))
+
+# read in 1-gram information
+unigramDF<-read.csv("unigramDF.csv")[,-1]
+unigramLength<-length(unigramDF$Uni)
+unigramDF$Uni<-as.character(unigramDF$Uni)
+unigramDF$counts<-as.numeric(unigramDF$counts)
+uni.freqfreq<-data.frame(Uni=table(unigramDF$counts))
+
+# Calculate probability of unseen unigram as per Jurafsky and Martin
+GTCount[1,2] <- uni.freqfreq[1,2]
+GTCount[2:7,2] <- uni.freqfreq[1:6,2]
+
+kFactor <- 6*GTCount[7,2]/GTCount[2,2] # for k = 5
+for (c in 0:5){
+     num<-((c+1)*GTCount[c+2,2]/GTCount[c+1,2])-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,2]<-num/den
+}
+rm(unigramDF,uni.freqfreq)
+
+# read in 2-gram information
+twogramDF<-read.csv("twogramDF.csv")[,-1]
+bigramLength<-length(twogramDF$Bi)
+twogramDF$Bi<-as.character(twogramDF$Bi)
+twogramDF$counts<-as.numeric(twogramDF$counts)
+twogramDF$Uni<-sub(" .*","",twogramDF$Bi)
+
+bi.freqfreq<-data.frame(Bi=table(twogramDF$counts))
+
+# Calculate probability of unseen bigram as per Jurafsky and Martin
+GTCount[1,3] <- unigramLength^2 - bigramLength
+GTCount[2:7,3] <- bi.freqfreq[1:6,2]
+
+kFactor <- 6*GTCount[7,3]/GTCount[2,3] # for k = 5
+for (c in 0:5){
+     num<-(c+1)*GTCount[c+2,3]/GTCount[c+1,3]-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,3]<-num/den
+}
+rm(twogramDF,bi.freqfreq)
+
+# read in 3-gram information
+threegramDF<-read.csv("threegramDF.csv")[,-1]
+singleTri<-read.csv("singleTriGrams.csv")
+singleTriLength<-length(singleTri$Tri)
+trigramLength<-length(threegramDF$Tri)+singleTriLength
+rm(singleTri)
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram)
+rm(bigram)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri)
+
+tri.freqfreq <- data.frame(Tri=table(threegramDF$counts))
+# Calculate probability of unseen trigram as per Jurafsky and Martin
+GTCount[1,4] <- unigramLength^3 - trigramLength
+GTCount[2,4] <- singleTriLength
+GTCount[3:7,4] <- tri.freqfreq[1:5,2]
+
+kFactor <- 6*GTCount[7,4]/GTCount[2,4] # for k = 5
+for (c in 0:5){
+     num<-(c+1)*GTCount[c+2,4]/GTCount[c+1,4]-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,4]<-num/den
+}
+write.csv(GTCount,"GTCount.csv")
+rm(threegramDF,tri.freqfreq)
+
+rm(list=ls())
+```
+
+``` {r 6-predictingngramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+########
+## This code relies on two .CSV datasets built using the other modules:
+##    *GTCount.csv - contains the Good-Turing Smoothing parameters
+##    * threegramDF.csv - contains all non-singleton trigrams and counts
+########
+options(digits=4)
+
+## Read in prepared .CSV datasets
+threegramDF<-read.csv("threegramDF.csv")[,-1]
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram) # sets up the 2-gram lookup index
+rm(bigram)
+threegramDF$Uni<-sub(".* ","",threegramDF$Bi)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri) # provides list of output word
+
+# read in Good-Turing Smoothing table
+GTCount<-read.csv("GTCount.csv")[,-1]
+
+##### Supplemental Function Calls #####
+cleanInput <-function(word) {
+##
+## This function call takes in a user passes parameter and does basic
+## preprocessing such as remove punctuation (retaining apostrophes),
+## remove and preceding spaces, and remove multiple spaces in phrase.
+##
+## It returns the processed user input
+##
+    word <- tolower(word) #ensure input is in lower case
+    word <- gsub("[^[:alnum:][:space:]\']", "",word)
+    word <- gsub("^[ ]{1,10}","",word)
+    word <- gsub("[ ]{2,10}"," ",word)
+    return(word)
+}
+
+buildTable <-function(input,subTri,cluster) {
+##
+## This function takes in the cleaned input phrase and a subset of all
+## seen tri-grams from threegramDF.csv based on user input. It also takes in
+## a user defined number for the clusters they want displayed
+##
+## It returns the list of tri-grams for visual and tabular display
+##
+    diff = 0 # initialize counter - compares diff in probabilities of rows
+    row.use=1 # initialize counter - counts total rows to subset from DF
+    size <- dim(subTri)[1]
+    if (size == 1){        # if the total trigrams found equals one
+        useTri <- subTri   # simply use the one phrase and return as output
+        return(useTri)
+    } else {               # else build table of outputs based on cluster input
+        remain = size - 1  # counter to work through list
+        while (diff < cluster && remain >0) {
+            if (subTri[row.use,2] - subTri[row.use+1,2] > .00001) diff=diff + 1
+            row.use <-row.use + 1
+            remain <- remain - 1    # calculates when end-of-list is reached
+        }
+        if (remain == 0) {
+            useTri <- subTri[1:row.use,]  # when list is fully used
+            return(useTri)
+        } else {
+            useTri <- subTri[1:row.use-1,]  # if max is reached first
+            return(useTri)
+        }
+    }
+}
+
+###### Main Prediction Function #######
+
+predict <-function(input,cluster=7){
+## This function takes as input two words (a bigram) and uses that to enter
+## lookup tables to find the highest probability trigrams that result.
+## It emplolys Good-Turing Smoothing and Katz back off when conditions would
+## suggest their use.
+##
+## Within the function, it produces a dotchart based on a default of 7 clusters
+## The function returns a data frame contain the top predicted word endings
+##
+    Katz = FALSE # initialize Katz back off flag to FALSE
+    gt = FALSE # initialize Good-Turing smoothing to FALSE
+    input <- cleanInput(input)
+    inputSize<-length(strsplit(input, " ")[[1]])
+    if (inputSize != 2) stop("Please input exactly two words.\n",
+        "Don't forget adding the space.")    # error handling
+    nCount <- sum(threegramDF[which(threegramDF$Bi==input),2])
+    if (nCount == 0) {     # bicount=0 therefore use Katz backoff
+        Katz = TRUE
+        input <- gsub(".* ","",input)    # isolates w2 as unigram
+        nCount <- sum(threegramDF[which(threegramDF$Uni==input),2])
+        if (nCount == 0) stop("This phrase is very unique.\n", 
+            "I can't seem to find it.")     # error handling
+
+        # Subset all recorded 2-grams that begin with unigram
+        seekTri<-grepl(paste("^",input,"$",sep=""),threegramDF$Uni)
+        subTri<-threegramDF[seekTri,] #subset relevant outputs
+        # aggregation is key here because otherwise can provide
+        # multiple output words as the front of bigrams was removed
+        subTri<-aggregate(subTri$counts,list(subTri$w3),sum)
+        names(subTri)<-c("w3","counts")
+        subTri<-subTri[order(subTri$counts,decreasing=T),]
+        useTri <- buildTable (input,subTri,cluster)
+        for (i in 1:length(useTri$counts)) {
+            count = useTri[i,2]
+            if(count<=5) {     # employs the Good-Turing Smoothing
+                useTri[i,2]<-GTCount[count+1,2]
+                gt = TRUE
+            }
+        }
+    } else {
+
+        # Subset all recorded 3-grams that begin with bigram
+        seekTri<-grepl(paste("^",input,"$",sep=""),threegramDF$Bi)
+        subTri<-threegramDF[seekTri,] #subset relevant 3-grams
+        subTri<-aggregate(subTri$counts,list(subTri$w3),sum)
+        names(subTri)<-c("w3","counts")
+        subTri<-subTri[order(subTri$counts,decreasing=T),]
+        useTri <- buildTable (input,subTri,cluster)
+        for (i in 1:length(useTri$counts)) {
+            count = useTri[i,2]
+            if(count<=5) {     # employs the Good-Turing Smoothing
+                useTri[i,2]<-GTCount[count+1,4]
+                gt = TRUE
+            }
+        }
+    }
+   
+    options(digits = 4)
+
+    ## generates data frame of tabular outputs for user review
+    predictWord <- data.frame(Word=useTri$w3,
+        probability=(useTri$counts/nCount)*100, stringsAsFactors=FALSE) 
+    
+    ## generates dotchart to visualize possible options, must invert order
+    plot<-predictWord[order(predictWord$probability),] #order for lowest to highest
+    dotchart(plot$probability,labels=plot$Word, pch=19, color="blue",
+         xlab=paste("Probability (in %) of top",cluster,"clusters"),
+         main=paste("N-Grams Starting with: \"",toupper(input),"\""))
+    
+    ## informative phrases as to what the user input was
+    print(paste("Words completing N-Gram starting with: ",toupper(input)))
+    if(Katz==TRUE){
+        print("*Katz back off helped find options by reducing 2-gram to a 1-gram")
+    }    
+    if(gt == TRUE){
+        print("*Good-Turing techniques were used in the solution")
+    }
+    
+    return(predictWord)
+}
+```
+
+
+This is the R Markdown document for the Capstone project.
+
+
+### Acknowledgements
+First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
+
+### References
+Jurafsky, D. and Martin, J.H. (2000). *Speech and language processing: An introduction to natural language processing, computational linguistics and speech recognition*. Englewood Cliffs, NJ: Prentice Hall.
+
+Richards, B. (1987). Type/token ratios:What do they really tell us? Journal of Child Language, 14, pp. 201209. Doi: 10:1017/S0305000900012885.
+
+
+******
+### Appendix A - Generating Training and Testing Sets
+
+``` {r A-createDataSubsets, echo=TRUE, eval=FALSE, warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Create data subsets from original datasets provided
+##
+library(tm) # Use tm package
+# Read in three English text data sets already extracted from .zip file
+# Used virtual corpus for this interim work
+tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"),
+                 readerControl=list(language="en"))
+blog <- VCorpus(DirSource("blogs", encoding = "UTF-8"),
+                readerControl=list(language="en"))
+news <- VCorpus(DirSource("news", encoding = "UTF-8"),
+                readerControl=list(language="en"))
+########
+## Approach to split corpora into train, devtest, and test sets
+########
+
+# Permute entire tweet group to randomize order
+set.seed(0330)
+perm.tweet <- sample(tweet[[2]][[1]], length(tweet[[2]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.tweet))
+twtTrain <- perm.tweet[1:TR]
+remain<-perm.tweet[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+twtDevtest <- remain[1:DEV]
+twtTest <- remain[-(1:DEV)]
+write(twtTrain,"twtTrain.txt")
+write(twtDevtest,"twtDevtest.txt")
+write(twtTest,"twtTest.txt")
+rm(list = ls()) #clean environment
+
+# Permute entire blog group to randomize order                     
+set.seed(0330)
+perm.blog <- sample(blog[[1]][[1]], length(blog[[1]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.blog))
+blogTrain <- perm.blog[1:TR]
+remain<-perm.blog[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+blogDevtest <- remain[1:DEV]
+blogTest <- remain[-(1:DEV)]
+write(blogTrain,"blogTrain.txt")
+write(blogDevtest,"blogDevtest.txt")
+write(blogTest,"blogTest.txt")
+rm(list = ls()) #clean environment
+
+# Permute entire news group to randomize order   
+set.seed(0330)
+perm.news <- sample(news[[1]][[1]], length(news[[1]][[1]]))
+# sets the ratio of training set at 60%
+TR <- round(0.6*length(perm.news))
+newsTrain <- perm.news[1:TR]
+remain<-perm.news[-(1:TR)]
+# splits remaining dataset in half for devtest and test set
+DEV <- round(0.5*(length(remain)))
+newsDevtest <- remain[1:DEV]
+newsTest <- remain[-(1:DEV)]
+write(newsTrain,"newsTrain.txt")
+write(newsDevtest,"newsDevtest.txt")
+write(newsTest,"newsTest.txt")
+rm(list = ls()) #clean environment
+```
+
+******
+### Appendix B - Reading in the Data and Cleaning
+
+``` {r B-readTraininSettoClean, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+#
+## Read in dataset and clean for use
+##
+library(tm)   # package used to read dataset
+library(filehash) # package used to update/maintain permanent corpus database
+myCorpus <- PCorpus(DirSource("training", #training contains blog 60% training set
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+##
+## Cleaning steps refined  over time
+## Accomplished in three loops due to RAM limitations
+##
+
+# to lower case
+myCorpus <- tm_map(myCorpus, content_transformer(tolower));dbInit("myCorpus.db")
+
+for (j in seq(myCorpus)) {
+     # first two separate hyphenated and slashed words
+     myCorpus[[j]][[1]] <-gsub("-", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("/", " ", myCorpus[[j]][[1]])
+     # converts symbol <> into an apostrophe
+     myCorpus[[j]][[1]] <-gsub("<>", "\\'", myCorpus[[j]][[1]])
+     print("3 of 18 transformations complete") #provides progress to user
+     # these three create end of sentence markers <EOS>
+     myCorpus[[j]][[1]] <-gsub("\\. |\\.$","  <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\? |\\?$","  <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\! |\\!$","  <EOS> ", myCorpus[[j]][[1]])
+     print("6 of 18 transformations complete") #provides progress to user
+}
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # writes corpus to permanent disc
+# reads back in corpus...this method reduced 908MB corpus to 137MB
+myCorpus <- PCorpus(DirSource("mod", 
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
+
+for (j in seq(myCorpus)) {
+     # tranforms various ASCII codes to appropriate language 
+     myCorpus[[j]][[1]] <-gsub("<85>"," <EOS> ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("<92>","'", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("\\&", " and ", myCorpus[[j]][[1]])
+     print("9 of 18 transformations complete") #provides progress to user
+     # removes all punctuation except apostrophe and <> symbols in <EOS>
+     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ", myCorpus[[j]][[1]])
+     # removes web site URLs
+     myCorpus[[j]][[1]] <-gsub(" www(.+) ", " ", myCorpus[[j]][[1]])
+     # removes all single letters except "a" and "i"
+     myCorpus[[j]][[1]] <-gsub(" [b-hj-z] "," ", myCorpus[[j]][[1]])
+     print("12 of 18 transformations complete") #provides progress to user
+}
+
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to permanent disc
+# reduced 937 MB corpus to 133 MB
+myCorpus <- PCorpus(DirSource("mod",
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db", dbType="DB1"))
+
+for (j in seq(myCorpus)) {
+     # removes errant apostrohes introduced by transformations
+     myCorpus[[j]][[1]] <-gsub(" ' "," ", myCorpus[[j]][[1]])        
+     myCorpus[[j]][[1]] <-gsub("\\' ", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub(" ' ", " ", myCorpus[[j]][[1]])
+     print("15 of 18 transformations complete") #provides progress to user
+     # removes errant codes in < > brackets
+     myCorpus[[j]][[1]] <-gsub("<[^EOS].+>"," ", myCorpus[[j]][[1]])
+     # replaces numbers with a number marker <NUM> for context
+     myCorpus[[j]][[1]] <-gsub("[0-9]+"," <NUM> ", myCorpus[[j]][[1]])
+     # removes and errant <> brackets remaining
+     myCorpus[[j]][[1]] <-gsub("<>"," ", myCorpus[[j]][[1]])
+     print("18 of 18 transformations complete") #provides progress to user
+}
+# removes numbers and the tm package "dbInit" compresses data in RAM
+myCorpus <- tm_map(myCorpus, removeNumbers);dbInit("lastCorpus.db")
+# removes errant 's symbols not as contractions
+myCorpus[[1]][[1]] <-gsub(" 's"," ", myCorpus[[1]][[1]])
+# removes errant close brackets starting a word
+myCorpus[[1]][[1]] <-gsub(">[a-z]"," ", myCorpus[[1]][[1]])
+
+myCorpus <- tm_map(myCorpus, stripWhitespace);dbInit("lastCorpus.db")
+# final corpus after all processing only 111 MB
+
+# Writes final, processed corpus to disc for building n-grams
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
+# original training set 130 MB; clean training seet 108 MB
+```
+
+******
+### Appendix C - Prototype Modeling - Building N-Gram Models
+
+#### C-1: Building the 1-Gram (unigram) Model
+
+``` {r C1-buildOneGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Code uses blogTrain.txt to generate list of all 1-gram (unigrams)
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="aggCorpus.db", dbType="DB1"))
+
+library(tau) #package to create N-Grams
+ngram <- function(n) {
+     textcnt(CORP, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]]) #pulls out the text element from the list myCorpus
+
+oneGram <- ngram(1)
+unigramDF<-data.frame(Uni = names(oneGram), counts = unclass(oneGram))
+rm(oneGram)
+unigramDF$Uni<-as.character(unigramDF$Uni)
+unigramDF$counts<-as.numeric(unigramDF$counts)
+# removes the "words" <eos> and <num> from unigram table
+unigramDF <- unigramDF[which(unigramDF$Uni!="<eos>"),]
+unigramDF <- unigramDF[which(unigramDF$Uni!="<num>"),]
+
+lengthUni<-length(unigramDF$Uni) #253,921 unigrams
+
+# Builds frequency of frequency table for Good-Turing smoothing
+uni.freqfreq<-data.frame(Uni=table(unigramDF$counts))
+
+write.csv(unigramDF,"unigramDF.csv") #2,620 frequencies
+write.csv(uni.freqfreq,"uni.freqfreq.csv")
+rm(unigramDF,uni.freqfreq,CORP,myCorpus)
+```
+
+
+#### C-2: Building the 2-Gram (bigram) Model
+``` {r C2-buildTwoGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Code uses blogTrain.txt to generate list of all 2-grams (bigrams)
+## Specifically designed to break large corpus into chunks to deal
+## with limitations imposed by RAM in R
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="biCorpus.db", dbType="DB1"))
+library(tau) #package to create N-Grams
+ngram <- function(n) {
+     textcnt(CORPport, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]]) #pulls out the text element from the list myCorpus
+rm(myCorpus) #reduce RAM load
+# determine number of loop runs to process 10,000 docs per run
+step<-trunc(length(CORP)/10000)
+remain<- length(CORP)-(step * 10000)
+# first deal with the remainder
+CORPport<-CORP[1:remain]
+# invokes tau package to build the bigrams
+twoGram <- ngram(2)
+names(twoGram) <- gsub("^\'","",names(twoGram))        
+twogramDF<-data.frame(Bi = names(twoGram), counts = unclass(twoGram))
+names(twogramDF)<-c("Bi","counts")
+## removes the "words" <eos> and <num> from unigram table
+eosTag<-grepl("<eos>",twogramDF$Bi)
+twogramDF<-twogramDF[!eosTag,]
+numTag<-grepl("<num>",twogramDF$Bi)
+twogramDF<-twogramDF[!numTag,]
+# writes first of N:n=step dataframes
+write.csv (twogramDF,"twoGramDF1.csv")
+CORP<-CORP[-(1:remain)] #remove already processed docs from corpus
+
+for (i in 1:(step-1)) {  # loop to process steps of 10000 docs
+     CORPport<-CORP[1:10000]
+     twoGram <- ngram(2)
+     names(twoGram) <- gsub("^\'","",names(twoGram))        
+     tmptwogramDF<-data.frame(Bi = names(twoGram), counts = unclass(twoGram))
+     print(paste("Iteration",i,"of",step)) #provide user progress
+     name<-paste("twoGramDF",(i+1),".csv",sep="")
+     ## removes the "words" <eos> and <num> from unigram table
+     eosTag<-grepl("<eos>",tmptwogramDF$Bi)
+     tmptwogramDF<-tmptwogramDF[!eosTag,]
+     numTag<-grepl("<num>",tmptwogramDF$Bi)
+     tmptwogramDF<-tmptwogramDF[!numTag,]
+     write.csv (tmptwogramDF,name)
+     twogramDF<-rbind(twogramDF,tmptwogramDF)
+     twogramDF<-aggregate(twogramDF$counts,list(Bi=twogramDF$Bi),sum)
+     names(twogramDF)<-c("Bi","counts")
+     CORP<-CORP[-(1:10000)]
+}
+rm(tmptwogramDF,numTag,eosTag,ngram,CORPport,twoGram)
+rm(remain,step,name,i,CORP)
+twogramDF$Bi<-as.character(twogramDF$Bi)
+twogramDF$counts<-as.numeric(twogramDF$counts)
+twogramDF$Uni<-sub(" .*","",twogramDF$Bi)
+# Builds frequency of frequency table for Good-Turing smoothing
+bi.freqfreq<-data.frame(Bi=table(twogramDF$counts))
+write.csv(twogramDF,"twogramDF.csv")
+write.csv(bi.freqfreq,"bi-freqfreq.csv")
+rm(bi.freqfreq,twogramDF)
+```
+
+#### C-3: Building the 3-Gram (trigram) Model
+``` {r C3-buildThreeGramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Code uses blogTrain.txt to generate list of all 3-grams (trigrams)
+## Specifically designed to break large corpus into chunks to deal
+## with limitations imposed by RAM in R
+##
+library(tm)   # package used to read dataset
+library(filehash)
+myCorpus <- PCorpus(DirSource("mod", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="triCorpus.db", dbType="DB1"))
+library(tau)
+ngram <- function(n) {
+     textcnt(CORPport, method = "string",n=as.integer(n),
+             split = "[[:space:][:digit:]]+",decreasing=T)
+}
+CORP<-c(myCorpus[[1]][[1]])
+rm(myCorpus) #reduce RAM load
+# determine number of loop runs to process 10,000 docs per run
+step<-trunc(length(CORP)/10000)
+for (i in 1:(step)) {
+     CORPport<-CORP[1:10000]
+     # invokes tau package to build the trigrams
+     threeGram <- ngram(3)
+     names(threeGram) <- gsub("^\'","",names(threeGram))
+     threegramDF<-data.frame(Tri = names(threeGram), counts = unclass(threeGram))
+     print(paste("Iteration",i,sep=" "))
+     name<-paste("threeGramDF",i,".csv",sep="")
+     ## removes the "words" <eos> and <num> from trigram table
+     eosTag<-grepl("<eos>",threegramDF$Tri)
+     threegramDF<-threegramDF[!eosTag,]
+     numTag<-grepl("<num>",threegramDF$Tri)
+     threegramDF<-threegramDF[!numTag,]
+     # writes first of N:n=step dataframes
+     write.csv (threegramDF,name)
+     CORP<-CORP[-(1:10000)]
+}
+CORPport<-CORP
+# repeats above loop for the remaining documents (partial step)
+threeGram <- ngram(3)
+names(threeGram) <- gsub("^\'","",names(threeGram))
+threegramDF<-data.frame(Tri = names(threeGram), counts = unclass(threeGram))
+names(threegramDF)<-c("Tri","counts")
+name<-paste("threeGramDF",i+1,".csv",sep="")
+eosTag<-grepl("<eos>",threegramDF$Tri)
+threegramDF<-threegramDF[!eosTag,]
+numTag<-grepl("<num>",threegramDF$Tri)
+threegramDF<-threegramDF[!numTag,]
+write.csv (threegramDF,name)
+
+rm(threegramDF, CORP,CORPport,threeGram,i,name)
+
+#####
+## Begin aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (k in seq(1,46,5)) {
+     key<-paste("threeGramDF",k,".csv",sep="")
+     print(k)
+     threeGramDF <-read.csv(file = key)
+     threeGramDF<-threeGramDF[,-1]
+     for (m in 1:4) {
+          name<-paste("threeGramDF",(k+m),".csv",sep="")
+          temp <- read.csv(name)
+          temp<-temp[,-1]
+          threeGramDF <- merge(threeGramDF,temp, by.x="Tri",by.y="Tri", all=TRUE)
+          print(k+m)
+          rm(temp)
+     }
+     out<-paste("mergedTri",k,".csv",sep="")
+     counts<-threeGramDF[,2:ncol(threeGramDF)]
+     threeGramDF$counts<-rowSums(counts,na.rm=TRUE)
+     threeGramDF<-threeGramDF[,-(2:(ncol(threeGramDF)-1))]
+     write.csv(threeGramDF,out)
+     rm(threeGramDF,counts)
+}
+
+k=k+5
+
+key<-paste("threeGramDF",k,".csv",sep="")
+print(k)
+threeGramDF <-read.csv(file = key)
+threeGramDF<-threeGramDF[,-1]
+for (m in 1:3) {
+     name<-paste("threeGramDF",(k+m),".csv",sep="")
+     temp <- read.csv(name)
+     temp<-temp[,-1]
+     threeGramDF <- merge(threeGramDF,temp, by.x="Tri",by.y="Tri", all=TRUE)
+     print(k+m)
+     rm(temp)
+}
+out<-paste("mergedTri",k,".csv",sep="")
+counts<-threeGramDF[,2:ncol(threeGramDF)]
+threeGramDF$counts<-rowSums(counts,na.rm=TRUE)
+threeGramDF<-threeGramDF[,-(2:(ncol(threeGramDF)-1))]
+write.csv(threeGramDF,out)
+rm(threeGramDF,counts)
+
+#####
+## continue aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (p in c(1,11,21,31,41)) {
+     m1<-paste("mergedTri",p,".csv",sep="")
+     m6<-paste("mergedTri",(p+5),".csv",sep="")
+     print(m1)
+     print(m6)
+     m1<-read.csv(m1)[,-1]
+     m6<-read.csv(m6)[,-1]
+     super <- merge(m1,m6, by.x="Tri",by.y="Tri", all=TRUE)
+     rm(m1,m6)
+     counts<-super[,2:ncol(super)]
+     super$counts<-rowSums(counts,na.rm=TRUE)
+     super<-super[,-(2:(ncol(super)-1))]
+     supOut<-paste("superTri",p,".csv",sep="")
+     write.csv(super,supOut)
+     rm(super,counts)
+}        
+
+superTri51<-read.csv("mergedTri51.csv")[,-1]
+write.csv(superTri51,"superTri51.csv")
+rm(superTri51)
+
+#####
+## Continue aggregating dataframes in groups to develop one trigram dataframe
+#####
+
+for (p in c(1,21,41)) {
+     m1<-paste("superTri",p,".csv",sep="")
+     m6<-paste("superTri",(p+10),".csv",sep="")
+     print(m1)
+     print(m6)
+     m1<-read.csv(m1)[,-1]
+     m6<-read.csv(m6)[,-1]
+     super <- merge(m1,m6, by.x="Tri",by.y="Tri", all=TRUE)
+     rm(m1,m6)
+     counts<-super[,2:ncol(super)]
+     super$counts<-rowSums(counts,na.rm=TRUE)
+     super<-super[,-(2:(ncol(super)-1))]
+     supOut<-paste("superTri2-",p,".csv",sep="")
+     write.csv(super,supOut)
+     rm(super,counts)
+} 
+
+#####
+## First of final 2 aggregating processes to develop one trigram dataframe
+#####
+
+A<-read.csv("superTri2-1.csv")[,-1]
+AtwoPlus<-A[which(A$counts>=2),]
+Asingles<-A[which(A$counts==1),]
+rm(A)
+
+B<-read.csv("superTri2-21.csv")[,-1]
+BtwoPlus<-B[which(B$counts>=2),]
+Bsingles<-B[which(B$counts==1),]
+rm(B)
+
+# creates aggregated dataframes for singleton trigrams and all others
+threegramDF <- merge(AtwoPlus,BtwoPlus, by.x="Tri",by.y="Tri", all=TRUE)
+rm(AtwoPlus,BtwoPlus)
+write.csv(threegramDF,"threegramDF.csv")
+rm(threegramDF)
+singles <-merge(Asingles,Bsingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(Asingles,Bsingles)
+write.csv(singles,"interimABsingles.csv")
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri1.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+rm(singleBlend)
+
+half<-trunc(length(singles$counts)/2)
+half2<-length(singles$counts)-half
+
+singlesFirstHalf<-singles[1:half,]
+write.csv(singlesFirstHalf,"firstHalf.csv")
+rm(singlesFirstHalf)
+singlesSecondHalf<-singles[-(1:half),]
+rm(singles)
+write.csv(singlesSecondHalf,"secondHalf.csv")
+
+#####
+## Second of final 2 aggregating processes to develop one trigram dataframe
+#####
+
+C<-read.csv("superTri2-41.csv")[,-1]
+CtwoPlus<-C[which(C$counts>=2),]
+Csingles<-C[which(C$counts==1),]
+rm(C)
+
+threegramDF<-read.csv("threegramDF.csv")
+threegramDF<-threegramDF[,-1]
+threegramDF <- merge(threegramDF,CtwoPlus, by.x="Tri",by.y="Tri", all=TRUE)
+rm(CtwoPlus)
+counts<-threegramDF[,2:ncol(threegramDF)]
+threegramDF$counts<-rowSums(counts,na.rm=TRUE)
+threegramDF<-threegramDF[,-(2:(ncol(threegramDF)-1))]
+rm(counts)
+write.csv(threegramDF,"threegramDF.csv")
+rm(threegramDF)
+
+singles <-merge(singlesSecondHalf,Csingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(singlesSecondHalf)
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri2.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+write.csv(singles,"halfRealsingles2.csv")
+rm(singleBlend,singles)
+
+firstHalf<-read.csv("firstHalf.csv")
+firstHalf<-firstHalf[,-1]
+singles <-merge(firstHalf,Csingles, by.x="Tri",by.y="Tri", all=TRUE)
+rm(Csingles,firstHalf)
+
+counts<-singles[,2:ncol(singles)]
+singles$counts<-rowSums(counts,na.rm=TRUE)
+singles<-singles[,-(2:(ncol(singles)-1))]
+rm(counts)
+singleBlend<-which(singles$counts>1)
+singlesAdd2Tri<-singles[singleBlend,]
+write.csv(singlesAdd2Tri,"add2Tri3.csv")
+rm(singlesAdd2Tri)
+singles<-singles[-singleBlend,]
+rm(singleBlend)
+write.csv(singles,"halfRealSingles1.csv")
+rm(singles)
+
+####
+## Bind all work together
+####
+
+threegramDF<-read.csv("threegramDF.csv")
+threegramDF<-threegramDF[,-1]
+one<-read.csv("add2Tri1.csv")
+one<-one[-1]
+threegramDF<-rbind(threegramDF,one)
+rm(one)
+two<-read.csv("add2Tri2.csv")
+two<-two[-1]
+threegramDF<-rbind(threegramDF,two)
+rm(two)
+three<-read.csv("add2Tri3.csv")
+three<-three[-1]
+threegramDF<-rbind(threegramDF,three)
+rm(three)
+### Resultant trigram dataframe
+write.csv(threegramDF,"threegramDF.csv")
+
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram)
+rm(bigram)
+threegramDF$Uni<-sub(".* ","",threegramDF$Bi)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri) # provides the suggested word
+# Builds frequency of frequency table for Good-Turing smoothing
+tri.freqfreq <- data.frame(Tri=table(threegramDF$counts))
+write.csv(threegramDF[,-1],"threegramDF.csv")
+write.csv(tri.freqfreq,"tri-freqfreq.csv")
+rm(tri.freqfreq,threegramDF) 
+
+####
+## create dataframe of singleton trigrams
+####
+S1<-read.csv("halfRealSingles1.csv")
+S1<-S1[,-1]
+S2<-read.csv("halfRealSingles2.csv")
+S2<-S2[,-1]
+S1<-rbind(S1,S2)
+write.csv(S1,"singleTriGrams.csv")
+rm(S1,S2)
+```
+
+******
+#### Appendix D - Implementing Good-Turing Smoothing
+
+``` {r D-generateGTmatrix, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Generates Good-Turing matrix for prediction model
+##
+# build empty matrix
+GTCount<-matrix(c(seq(0,6,1),rep(0,21)),nrow=7,ncol=4,
+                dimnames = list(c(seq(0,6,1)),c("count","uni","bi","tri")))
+
+# read in 1-gram information
+unigramDF<-read.csv("unigramDF.csv")[,-1]
+unigramLength<-length(unigramDF$Uni)
+unigramDF$Uni<-as.character(unigramDF$Uni)
+unigramDF$counts<-as.numeric(unigramDF$counts)
+uni.freqfreq<-data.frame(Uni=table(unigramDF$counts))
+
+# Calculate probability of unseen unigram as per Jurafsky and Martin
+GTCount[1,2] <- uni.freqfreq[1,2]
+GTCount[2:7,2] <- uni.freqfreq[1:6,2]
+
+kFactor <- 6*GTCount[7,2]/GTCount[2,2] # for k = 5
+for (c in 0:5){
+     num<-((c+1)*GTCount[c+2,2]/GTCount[c+1,2])-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,2]<-num/den
+}
+rm(unigramDF,uni.freqfreq)
+
+# read in 2-gram information
+twogramDF<-read.csv("twogramDF.csv")[,-1]
+bigramLength<-length(twogramDF$Bi)
+twogramDF$Bi<-as.character(twogramDF$Bi)
+twogramDF$counts<-as.numeric(twogramDF$counts)
+twogramDF$Uni<-sub(" .*","",twogramDF$Bi)
+
+bi.freqfreq<-data.frame(Bi=table(twogramDF$counts))
+
+# Calculate probability of unseen bigram as per Jurafsky and Martin
+GTCount[1,3] <- unigramLength^2 - bigramLength
+GTCount[2:7,3] <- bi.freqfreq[1:6,2]
+
+kFactor <- 6*GTCount[7,3]/GTCount[2,3] # for k = 5
+for (c in 0:5){
+     num<-(c+1)*GTCount[c+2,3]/GTCount[c+1,3]-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,3]<-num/den
+}
+rm(twogramDF,bi.freqfreq)
+
+# read in 3-gram information
+threegramDF<-read.csv("threegramDF.csv")[,-1]
+singleTri<-read.csv("singleTriGrams.csv")
+singleTriLength<-length(singleTri$Tri)
+trigramLength<-length(threegramDF$Tri)+singleTriLength
+rm(singleTri)
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram)
+rm(bigram)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri)
+
+tri.freqfreq <- data.frame(Tri=table(threegramDF$counts))
+# Calculate probability of unseen trigram as per Jurafsky and Martin
+GTCount[1,4] <- unigramLength^3 - trigramLength
+GTCount[2,4] <- singleTriLength
+GTCount[3:7,4] <- tri.freqfreq[1:5,2]
+
+kFactor <- 6*GTCount[7,4]/GTCount[2,4] # for k = 5
+for (c in 0:5){
+     num<-(c+1)*GTCount[c+2,4]/GTCount[c+1,4]-(c)*kFactor
+     den<- 1-kFactor
+     GTCount[c+1,4]<-num/den
+}
+write.csv(GTCount,"GTCount.csv")
+rm(threegramDF,tri.freqfreq)
+
+rm(list=ls())
+```
+
+******
+#### Appendix E - Prediction Model
+
+``` {r E-predictingngramModel, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+########
+## This code relies on two .CSV datasets built using the other modules:
+##    *GTCount.csv - contains the Good-Turing Smoothing parameters
+##    * threegramDF.csv - contains all non-singleton trigrams and counts
+########
+options(digits=4)
+
+## Read in prepared .CSV datasets
+threegramDF<-read.csv("threegramDF.csv")[,-1]
+threegramDF$Tri<-as.character(threegramDF$Tri)
+threegramDF$counts<-as.numeric(threegramDF$counts)
+bigram<-sub(" ","@@@@",threegramDF$Tri)
+bigram<-sub(" .*","",bigram)
+threegramDF$Bi<-sub("@@@@"," ",bigram) # sets up the 2-gram lookup index
+rm(bigram)
+threegramDF$Uni<-sub(".* ","",threegramDF$Bi)
+threegramDF$w3<-sub(".* ","",threegramDF$Tri) # provides list of output word
+
+# read in Good-Turing Smoothing table
+GTCount<-read.csv("GTCount.csv")[,-1]
+
+##### Supplemental Function Calls #####
+cleanInput <-function(word) {
+##
+## This function call takes in a user passes parameter and does basic
+## preprocessing such as remove punctuation (retaining apostrophes),
+## remove and preceding spaces, and remove multiple spaces in phrase.
+##
+## It returns the processed user input
+##
+    word <- tolower(word) #ensure input is in lower case
+    word <- gsub("[^[:alnum:][:space:]\']", "",word)
+    word <- gsub("^[ ]{1,10}","",word)
+    word <- gsub("[ ]{2,10}"," ",word)
+    return(word)
+}
+
+buildTable <-function(input,subTri,cluster) {
+##
+## This function takes in the cleaned input phrase and a subset of all
+## seen tri-grams from threegramDF.csv based on user input. It also takes in
+## a user defined number for the clusters they want displayed
+##
+## It returns the list of tri-grams for visual and tabular display
+##
+    diff = 0 # initialize counter - compares diff in probabilities of rows
+    row.use=1 # initialize counter - counts total rows to subset from DF
+    size <- dim(subTri)[1]
+    if (size == 1){        # if the total trigrams found equals one
+        useTri <- subTri   # simply use the one phrase and return as output
+        return(useTri)
+    } else {               # else build table of outputs based on cluster input
+        remain = size - 1  # counter to work through list
+        while (diff < cluster && remain >0) {
+            if (subTri[row.use,2] - subTri[row.use+1,2] > .00001) diff=diff + 1
+            row.use <-row.use + 1
+            remain <- remain - 1    # calculates when end-of-list is reached
+        }
+        if (remain == 0) {
+            useTri <- subTri[1:row.use,]  # when list is fully used
+            return(useTri)
+        } else {
+            useTri <- subTri[1:row.use-1,]  # if max is reached first
+            return(useTri)
+        }
+    }
+}
+
+###### Main Prediction Function #######
+
+predict <-function(input,cluster=7){
+## This function takes as input two words (a bigram) and uses that to enter
+## lookup tables to find the highest probability trigrams that result.
+## It emplolys Good-Turing Smoothing and Katz back off when conditions would
+## suggest their use.
+##
+## Within the function, it produces a dotchart based on a default of 7 clusters
+## The function returns a data frame contain the top predicted word endings
+##
+    Katz = FALSE # initialize Katz back off flag to FALSE
+    gt = FALSE # initialize Good-Turing smoothing to FALSE
+    input <- cleanInput(input)
+    inputSize<-length(strsplit(input, " ")[[1]])
+    if (inputSize != 2) stop("Please input exactly two words.\n",
+        "Don't forget adding the space.")    # error handling
+    nCount <- sum(threegramDF[which(threegramDF$Bi==input),2])
+    if (nCount == 0) {     # bicount=0 therefore use Katz backoff
+        Katz = TRUE
+        input <- gsub(".* ","",input)    # isolates w2 as unigram
+        nCount <- sum(threegramDF[which(threegramDF$Uni==input),2])
+        if (nCount == 0) stop("This phrase is very unique.\n", 
+            "I can't seem to find it.")     # error handling
+
+        # Subset all recorded 2-grams that begin with unigram
+        seekTri<-grepl(paste("^",input,"$",sep=""),threegramDF$Uni)
+        subTri<-threegramDF[seekTri,] #subset relevant outputs
+        # aggregation is key here because otherwise can provide
+        # multiple output words as the front of bigrams was removed
+        subTri<-aggregate(subTri$counts,list(subTri$w3),sum)
+        names(subTri)<-c("w3","counts")
+        subTri<-subTri[order(subTri$counts,decreasing=T),]
+        useTri <- buildTable (input,subTri,cluster)
+        for (i in 1:length(useTri$counts)) {
+            count = useTri[i,2]
+            if(count<=5) {     # employs the Good-Turing Smoothing
+                useTri[i,2]<-GTCount[count+1,2]
+                gt = TRUE
+            }
+        }
+    } else {
+
+        # Subset all recorded 3-grams that begin with bigram
+        seekTri<-grepl(paste("^",input,"$",sep=""),threegramDF$Bi)
+        subTri<-threegramDF[seekTri,] #subset relevant 3-grams
+        subTri<-aggregate(subTri$counts,list(subTri$w3),sum)
+        names(subTri)<-c("w3","counts")
+        subTri<-subTri[order(subTri$counts,decreasing=T),]
+        useTri <- buildTable (input,subTri,cluster)
+        for (i in 1:length(useTri$counts)) {
+            count = useTri[i,2]
+            if(count<=5) {     # employs the Good-Turing Smoothing
+                useTri[i,2]<-GTCount[count+1,4]
+                gt = TRUE
+            }
+        }
+    }
+   
+    options(digits = 4)
+
+    ## generates data frame of tabular outputs for user review
+    predictWord <- data.frame(Word=useTri$w3,
+        probability=(useTri$counts/nCount)*100, stringsAsFactors=FALSE) 
+    
+    ## generates dotchart to visualize possible options, must invert order
+    plot<-predictWord[order(predictWord$probability),] #order for lowest to highest
+    dotchart(plot$probability,labels=plot$Word, pch=19, color="blue",
+         xlab=paste("Probability (in %) of top",cluster,"clusters"),
+         main=paste("N-Grams Starting with: \"",toupper(input),"\""))
+    
+    ## informative phrases as to what the user input was
+    print(paste("Words completing N-Gram starting with: ",toupper(input)))
+    if(Katz==TRUE){
+        print("*Katz back off helped find options by reducing 2-gram to a 1-gram")
+    }    
+    if(gt == TRUE){
+        print("*Good-Turing techniques were used in the solution")
+    }
+    
+    return(predictWord)
+}
+```
+
+******
+#### Appendix F - Glossary of Key Terms
+
+**Good-Turing Discounting:** Termed Good-Turing smoothing, it is a technique to re-estimate probability mass to assign N-Grams with zero or low counts by discounting from those occurring more often.")
+
+**Katz back off:** Termed back off N-Gram modeling, it was developed in 1987 by Katz which predicts first based on non-zero, higher-order N-Grams and will "backoff" to a lower-order N-Gram if there is zero evidence of the higher-order N-Gram.
+
+**N-Gram:** A special type of wordform which looks *(N - n) words into the past and possesses the memoryless properties of a Markov model. A 3-gram looks at the previous 2-gram to make the prediction.
+
+**N-Gram cluster:** In calculating N-Grams, many probabilities are actually counts based on Good-Turing Discounting. A cluster is a group of words (sometimes a large number) having the same likelihood of appearing in the prediction model.
+
+******
+#### Appendix H - Development Platform Information
+
+``` {r H-sysInfo, echo=TRUE}
+sessionInfo()
+```
