@@ -3,11 +3,11 @@ title: 'Natural Language Processing: A Model to Predict a Sequence of Words'
 author: 'Gerald Gendron - [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/)'
 date: "October 13, 2014"
 output:
-  html_document:
-    toc: yes
+  word_document: default
   pdf_document:
     toc: yes
-  word_document: default
+  html_document:
+    toc: yes
 ---
 
 # Executive Summary
@@ -276,27 +276,6 @@ Diversity | Corpus | 22.68 | 45.22 | 72.56 | 103.84 | 163.43 | 172.10 | 179.05
 --------- | ------ | ----- | ----- | ----- | ------ | ------ | ------ | ------
 TTR       |  Blog  |  0.51 |  0.31 |  0.18 |   0.08 |   0.04 |   0.03 |   0.03
 TTR       | Corpus |  0.49 |  0.29 |  0.15 |   0.07 |   0.04 |   0.03 |   0.03
-
-
-
- 
- 
-
-
-
-
-
-
-# Statistical Modeling
-
-**Predictive modeling**
-
-
-**Creative exploration**
-
-
-
-
 
 ``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
@@ -686,6 +665,112 @@ write.csv(S1,"singleTriGrams.csv")
 rm(S1,S2)
 ```
 
+Understanding the distribution among the word tokens helps shape expectations of the linguistic model. An N-Gram refers to the number of words in a string. This project will work on a 3-Gram model. The basic building blocks of that model are unigrams (N: n=1), bigrams (N: n=2), and trigrams (N: n=3). A glimpse at the distribution of the frequencies of each of these word forms is provided in Figure 1. 
+
+*Figure 1: Distributions of three N-Gram models*
+
+``` {r preparePlotData, echo=FALSE, cache=TRUE}
+##
+## Read in necessary outputs describing the N-Grams
+# read in 1-gram information
+unigramDF<-read.csv("unigramDF.csv")[,-1]
+unigramDF$Uni<-as.character(unigramDF$Uni)
+unigramDF$counts<-as.numeric(unigramDF$counts)
+# read in 2-gram information
+twogramDF<-read.csv("twogramDF.csv")[,-1]
+twogramDF<-twogramDF[,-3]
+twogramDF<-twogramDF[order(twogramDF$counts,decreasing=T),]
+twogramDF$counts<-as.numeric(twogramDF$counts)
+# read in 3-gram information
+threegramDF<-read.csv("threegramDF.csv")[,-1]
+threegramDF<-threegramDF[order(threegramDF$counts,decreasing=T),]
+threegramDF$counts<-as.numeric(threegramDF$counts)
+```
+
+```{r generateDistibution plots, echo=FALSE, fig.height=2.5, cache=TRUE}
+## Plot distributions of N-Grams
+par(mfrow=c(1,3))
+distUni<-round(0.5*dim(unigramDF)[[1]])
+distBi<-round(0.5*dim(twogramDF)[[1]])
+distTri<-round(0.5*17021221 )
+
+barplot(log10(unigramDF$counts[1:distUni]+.1),ylab="log10 (Frequency)",xlab="Top 50% of 1-Grams", border="darkslateblue",ylim=c(.00001,5))
+barplot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",xlab="Top 50% of 2-Grams", border="darkslateblue",ylim=c(.00001,5))
+barplot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",xlab="Top 50% of 3-Grams", border="darkslateblue",ylim=c(.00001,5))
+```
+
+Prior to plotting, the frequencies were sorted in decreasing order and the x-axis is an index. Therefore, the far left of each plot indicates an N-Gram with the highest frequency. Notice a few features of the data. Although there are far fewer unigrams (198,576) than bigrams (3,525,643), than trigrams (17,021,221), they distributions are more there are a much more skewed right as the level of N increases. This indicates very long tails (more frequencies of 1, 2, etc.) but at the same time much higher frequencies of particular words (such as "the", "and", "to", etc.). The three plots are all logarithmic in the y-axis and set at a common y-axis limit to aid in comparison.
+
+Jurafsky and Martin (2000) also describe the importance of "frequencies of frequencies". This is the frequency of the frequency 20 (let's say) occuring. Those tables were generated based on. "In other words, we examine Nc, the number of N-grams that occur c times. We refer to the number of N-grams that occur c times as the frequency of frequency c" (Jurafsky & Martin, p. 212). The frequencies of frequencies view of the corpus is an important feature for N-Grams because these counts enable predictions of other words. The frequencies reduce rapidly comparing unigrams to trigrams. Information from th e literature indicate that these frequency tables respond well to regression analysis to smooth out the information and avoid having to keep all the data in storage. A visualization of these frequencies is provided in Figure 2.
+
+*Figure 2: Viewing frequencies of frequencies of various N-Grams*
+
+``` {r freqFreq, echo=FALSE, fig.height=2.5, cache=TRUE}
+# uni.freqfreq<-read.csv("uni.freqfreq.csv")[,-1]
+# bi.freqfreq<-read.csv("bi-freqfreq.csv")[,-1]
+# tri.freqfreq<-read.csv("tri-freqfreq.csv")[,-1]
+# par(mfrow = c(1,3))
+# scatter.smooth(uni.freqfreq$Uni.Var, log10(uni.freqfreq$Uni.Freq), ylab="log10 (freqency of freqency)", xlab= "unigram" ,ylim=c(.00001,10))
+# scatter.smooth(bi.freqfreq$Bi.Var, log10(bi.freqfreq$Bi.Freq), ylab="log10 (freqency of freqency)", xlab= "bigram",ylim=c(.00001,10))
+# scatter.smooth(tri.freqfreq$Tri.Var, log10(tri.freqfreq$Tri.Freq), ylab="log10 (freqency of freqency)", xlab= "trigram",ylim=c(.00001,10))
+
+
+par(mfrow = c(1,3))
+uni.freqfreq<-read.csv("uni.freqfreq.csv")
+bi.freqfreq<-read.csv("bi-freqfreq.csv")
+tri.freqfreq<-read.csv("tri-freqfreq.csv")
+#hist(log10(uni.freqfreq$Uni.Freq),breaks=28)
+library(scales)     
+scatter.smooth(log10(uni.freqfreq$Uni.Var), log10(uni.freqfreq$Uni.Freq), ylab="log10 (freqency of freqency)", xlab= "log10 (unigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+scatter.smooth(log10(bi.freqfreq$Bi.Var), log10(bi.freqfreq$Bi.Freq), ylab="log10 (freqency of freqency)", xlab= "log10 (bigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+scatter.smooth(log10(tri.freqfreq$Tri.Var), log10(tri.freqfreq$Tri.Freq), ylab="log10(freqency of freqency)", xlab= "log10 (trigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+```
+
+
+
+
+
+```{r GTCounts, echo=FALSE}
+knitr::kable(GTCount)
+```
+
+ 
+``` {r wordCounts, echo=FALSE, cache=TRUE}
+oneGram <- ngram(1)
+twoGram <- ngram(2)
+threeGram <- ngram(3)
+```
+
+``` {r showCounts, echo=FALSE}
+head(oneGram,10)
+head(twoGram,10)
+head(threeGram,10)
+```
+
+``` {r capturePercent, echo=FALSE, eval=FALSE}
+length(unigramDF$counts)
+sum(unigramDF$counts)*.5
+sum(unigramDF[1:133,]$counts)  #133/9310 = .014 of words for 50% of V
+sum(unigramDF$counts)*.9
+sum(unigramDF[1:4628,]$counts) #4628/9310 = .497 of words for 90% of V
+```
+
+
+Some words occur more frequently than others. Based on these outputs, specifically the unigrams, it is interesting to note that the first 133 unique word types (T) (sorted by frequency of occurrence) covers 50% of V –- it takes only 1.5% of words T to represent half the vocabulary V. Likewise, Ninety percent of vocabulary is covered with 4,625 of 9,310 total words. A distribution for each n-gram is presented in the figure below, indicating the frequency of each word based on Word Types and sorted from "most seen" to "least seen" word. The figure is truncated at the first 50 words. The frequency distributions decrease by an order of magnitude from unigrams to bigrams to trigrams. 
+
+
+
+
+# Statistical Modeling
+
+**Predictive modeling**
+
+
+**Creative exploration**
+
+
+
+
 ``` {r 5-generateGTmatrix, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Generates Good-Turing matrix for prediction model
@@ -926,8 +1011,14 @@ predict <-function(input,cluster=7){
 
 All of the data processing, analysis, and results are fully reproducible by executing the code in the appendices. Alternatively, an R markdown file is freely available at [https://github.com/jgendron/datasciencecoursera](https://github.com/jgendron/datasciencecoursera/blob/master/NLP-A%20Model%20to%20Predict%20Word%20Sequences.Rmd). Those interested in collaboratiing on this or similar projects may contact the author at [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/).
 
-# Creating a data product
+# Results
 
+
+## Creating a data product
+
+# Conclusions
+
+In this analysis, we determined common relationships between the various sub-corpus elements, the vocabulary, and word types, and their impacts on predictive power. Using information learned earlier during exploratory data analysis, the algorithms were refined to generate lookup tables that balanced depth of information with speed of processing. There was a subset of the corpus (specifically, 60 percent of the blog corpus) that produced an optimized balance between these competing properties. Through literature review, the Good-Turing approach was employed to developed the tables of counts which enabled prediction. The Katz Backoff approach was implemented in the event a particular three-word phrase was not found in the lookup table. This analysis suggests that a predictive model can be built, but it is most useful for predicting common word stems as opposed to highly specialized language needs of a user.
 
 # Acknowledgements
 First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
