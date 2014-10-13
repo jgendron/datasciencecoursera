@@ -13,59 +13,11 @@ This report provides documentation describing the process and decisions used to 
 
 *Keywords: natural language processing, text mining, predictive text analytics, N-Gram, Good-Turing Smoothing, Katz back off*
 
-# Understanding the Problem
-
-A most important aspect at the outset of a data analysis project is to understand the problem. With the advent of social media and blogs, the information value of raw text continues to increase. The problem that exists is in analyzing a large corpus of text to discover the structure and arrangement of words within the data in order to analyze the corpus using computational methods. 
-The essence of this project is to take a corpus (a bodey) of text from various sources, clean and analyze that text data, and build a predictive model to present the next likely word in a stream of text provided by a user. User input could range from formal, professional communication to informal, short messages - such as social media. Therefore, knowledge of the data sources in the corpus is essential. As a concrete example, a user may type into their mobile device - "I would like to". A predictive text model would present the most likely options for what the next word might be such as *"eat"*, *"go"*, or *"have"* - to name a few.
-
-Data sciences are increasingly making use of Natural Language Processing combined with statistical methods developed within the arts and humanities decades ago to characterize and leverage the streams of data that are text based and not inherently quantitative. There are many techniques available within the R programming language to work with text to work with them quantitatively. A key aspect of this project is to discern which techniques best promote accuracy and scalability for large data sets.
-
-# Literature Review
-
-*A brief history of text analysis*
-
-Alan Turing (1950) opens his influential article "Computing Machinery and Intelligence" with the statment, "I propose to consider the question, 'Can machines think?'" (p. 433). He follows this by outlining something he calls the imagination game played by man A - known as label X, woman B - known as label Y, and interrogator C. The interrogator is able to ask questions of X or Y in order to attain the objective to properly identify whether "X is A and Y is B" (p. 433) or vice versa. Turing later refines the original question to read, "Are there imaginable digital computers which would do well in the imitation game?" (p. 442). In essence - to predict truth based on features or interrogation. He speaks to a machine teaching process made up of rewards and punishments enforcing orders in symbolic language. Overall, this Turing Test has become a basis of natural language processing - covering a broad array of uses such as spelling correction, speech recognition, author identification, and prediction of words based on preceding words. 
-
-*Literature review purpose and findings*
-
-At the outset of this project, course instructors provided us with various sources on natural language processing, text mining, and various R programming packages they felt would be useful. Further literature review was conducted in order to understand the field and extract clues for building a model. Primary goals of the literature review were to understand:
-
-* common issues when analyzing text data
-* the body of knowledge that has built up in the domain of natural language processing
-* other resources not provided by this course for helping us in the analysis methodology
-
-This section is not a comprehensive overview of over 40 sources reviewed but merely a summary of two works most influential in shaping the modeling approach taken in this project. 
-
-Course notes for the Capstone project invited participants to become familiar with the R packages on NLP (openNLP) and text mining (tm). Feinerer, Hornik, and Meyer (2008) provide a good overview of the essential aspects of these packages. Noteworthy was their information about: reading in corpora into the R environment, explaining functions to transform the data, explaining stemming, stopwords, and tagging parts of speech, considering the issue of text sparsity, and understanding the fundamental of count based analysis. 
-
-Jurafsky and Martin (2000) provide a seminal work within the domain of NLP. The authors present a key approach for building prediction models called the N-Gram, which relies on knowledge of word sequences from *(N – 1)* prior words. It is a type of language model based on counting words in the corpora to establish probabilities about next words. Overall, Jurafsky and Martin's work had the greatest influence on this project in choosing among many possible strategies for developing a model to predict word selection. It addresses multiple perspectives of the topics found in Feinerer, Hornik, and Meyer. The following approaches and assumptions were chosen For purposes of building an initial model. They may be adapted as models are refined to increase prediction accuracy. 
-
-1. Case: corpora words will not be case-sensitive. Although important for spelling correction and part of speech analysis, the words themselves - not their case - are important for prediction. 
-2. Stopwords: similarly, unlike classification and clustering applications, all words will be included in the model as they represent more than just the primary carriers of the message. 
-3. Wordform: stemming will not be used as N-Grams are typically based on wordforms (unique, inflected forms of words). So whereas *table* and *tables* are the same lemma, they will be treated as separate words in this model. 
-4. Punctuation: Jurafsky and Martin treat punctuation as a word and counted as a word. Given the nature of the SwiftKey approach, which is not trying to generate full sentences but only predict a next word, punctuation will be treated slightly differently in the initial model. End of sentence punctuation (like ? ' ! .) will be used to include end-of-sentence <EOS> tags as the intuition is they have implications for word prediction. 
-5. Parts of Speech: the discussion of N-Grams did not imply the inherent value of predication based on syntactically using parts of speech.
-6. Numbers: there is no intuition based on the research that numbers will have a great impact on a predication model and they will be removed 
-7. Sparse Words: all words will be retained. A key concept from Jurafsky and Martin is the idea that even bigram models are quite sparse; however, rather than eliminating those wordforms, they become clues to the "probability of unseen N-Grams" (p. 209, 2000). They include as their fourth of eight key concepts *Things Seen Once* and recommend using the count of wordforms seen a single time to provide a basis to estimate those things not seen in the training set and will likely appear in a test set 
-8. Whitespace: this was not discussed directly by Jurafsky and Martin. The intuition is that whitespace has little to do with context and excess whitespace will be removed
-
-In addition to shaping the initial strategy, the work by Jurafsky and Martin provided valuable insights on other aspects of implementing a predication model.
-
-* Historical context of the unsmoothed N-Gram and basis of probabilistic approach to predicting words using the Markov assumption to simplify probabilities by looking only at (n-1) or (n-2) previous words 
-* Importance of having a diverse corpora in order to improve generalizability of prediction among other corpora 
-* Comparative analysis of smoothing and discounting techniques to increase predictive power 
-*Introduction of backoff techniques to establish probabilities for otherwise unseen elements of an N-Gram 
-* Discussion of entropy and perplexity - which may prove to be a good choice as the single measure to help assess quality of the prediction model
-
-
 ``` {r 0-createDataSubsets, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 
 ##################################
 ##################################
-## For RMD purposes, please note that the entire body of code is place within the
-## document to allow for runs of grpahics. You will notice that most front "Chunks"
-## are set to echo=FALSE and eval=FALSE. This is done to enable generation of the
-## PDF report
+## For RMD purposes, please note that the entire body of code is place within the document to allow for runs of graphics. You will notice that most front "Chunks" are set to echo=FALSE and eval=FALSE. This is done to enable generation of the PDF report
 ##################################
 ##################################
 
@@ -73,6 +25,12 @@ In addition to shaping the initial strategy, the work by Jurafsky and Martin pro
 ##
 ## Create data subsets from original datasets provided
 ##
+
+###
+## Note: prior to running, create these three folders and extract the associated data into each - one corpus per folder:
+# Folder Names: blogs, news, twitter
+###
+
 library(tm) # Use tm package
 # Read in three English text data sets already extracted from .zip file
 # Used virtual corpus for this interim work
@@ -135,14 +93,71 @@ write(newsTest,"newsTest.txt")
 rm(list = ls()) #clean environment
 ```
 
-``` {r 1-readTraininSettoClean, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
-#
-## Read in dataset and clean for use
+# Understanding the Problem
+
+A most important aspect at the outset of a data analysis project is to understand the problem. With the advent of social media and blogs, the information value of raw text continues to increase. The problem that exists is in analyzing a large corpus of text to discover the structure and arrangement of words within the data in order to analyze the corpus using computational methods. 
+The essence of this project is to take a corpus (a bodey) of text from various sources, clean and analyze that text data, and build a predictive model to present the next likely word in a stream of text provided by a user. User input could range from formal, professional communication to informal, short messages - such as social media. Therefore, knowledge of the data sources in the corpus is essential. As a concrete example, a user may type into their mobile device - "I would like to". A predictive text model would present the most likely options for what the next word might be such as *"eat"*, *"go"*, or *"have"* - to name a few.
+
+Data sciences are increasingly making use of Natural Language Processing combined with statistical methods developed within the arts and humanities decades ago to characterize and leverage the streams of data that are text based and not inherently quantitative. There are many techniques available within the R programming language to work with text to work with them quantitatively. A key aspect of this project is to discern which techniques best promote accuracy and scalability for large data sets.
+
+# Literature Review
+
+*A brief history of text analysis*
+
+Alan Turing (1950) opens his influential article "Computing Machinery and Intelligence" with the statment, "I propose to consider the question, 'Can machines think?'" (p. 433). He follows this by outlining something he calls the imagination game played by man A - known as label X, woman B - known as label Y, and interrogator C. The interrogator is able to ask questions of X or Y in order to attain the objective to properly identify whether "X is A and Y is B" (p. 433) or vice versa. Turing later refines the original question to read, "Are there imaginable digital computers which would do well in the imitation game?" (p. 442). In essence - to predict truth based on features or interrogation. He speaks to a machine teaching process made up of rewards and punishments enforcing orders in symbolic language. Overall, this Turing Test has become a basis of natural language processing - covering a broad array of uses such as spelling correction, speech recognition, author identification, and prediction of words based on preceding words. 
+
+*Literature review purpose and findings*
+
+At the outset of this project, course instructors provided us with various sources on natural language processing, text mining, and various R programming packages they felt would be useful. Further literature review was conducted in order to understand the field and extract clues for building a model. Primary goals of the literature review were to understand:
+
+* common issues when analyzing text data
+* the body of knowledge that has built up in the domain of natural language processing
+* other resources not provided by this course for helping us in the analysis methodology
+
+This section is not a comprehensive overview of over 40 sources reviewed but merely a summary of two works most influential in shaping the modeling approach taken in this project. 
+
+Course notes for the Capstone project invited participants to become familiar with the R packages on NLP (openNLP) and text mining (tm). Feinerer, Hornik, and Meyer (2008) provide a good overview of the essential aspects of these packages. Noteworthy was their information about: reading in corpora into the R environment, explaining functions to transform the data, explaining stemming, stopwords, and tagging parts of speech, considering the issue of text sparsity, and understanding the fundamental of count based analysis. 
+
+Jurafsky and Martin (2000) provide a seminal work within the domain of NLP. The authors present a key approach for building prediction models called the N-Gram, which relies on knowledge of word sequences from *(N – 1)* prior words. It is a type of language model based on counting words in the corpora to establish probabilities about next words. Overall, Jurafsky and Martin's work had the greatest influence on this project in choosing among many possible strategies for developing a model to predict word selection. It addresses multiple perspectives of the topics found in Feinerer, Hornik, and Meyer. The following approaches and assumptions were chosen For purposes of building an initial model. They may be adapted as models are refined to increase prediction accuracy. 
+
+1. Case: corpora words will not be case-sensitive. Although important for spelling correction and part of speech analysis, the words themselves - not their case - are important for prediction. 
+2. Stopwords: similarly, unlike classification and clustering applications, all words will be included in the model as they represent more than just the primary carriers of the message. 
+3. Wordform: stemming will not be used as N-Grams are typically based on wordforms (unique, inflected forms of words). So whereas *table* and *tables* are the same lemma, they will be treated as separate words in this model. 
+4. Punctuation: Jurafsky and Martin treat punctuation as a word and counted as a word. Given the nature of the SwiftKey approach, which is not trying to generate full sentences but only predict a next word, punctuation will be treated slightly differently in the initial model. End of sentence punctuation (like ? ' ! .) will be used to include end-of-sentence <EOS> tags as the intuition is they have implications for word prediction. 
+5. Parts of Speech: the discussion of N-Grams did not imply the inherent value of predication based on syntactically using parts of speech.
+6. Numbers: there is no intuition based on the research that numbers will have a great impact on a predication model and they will be removed 
+7. Sparse Words: all words will be retained. A key concept from Jurafsky and Martin is the idea that even bigram models are quite sparse; however, rather than eliminating those wordforms, they become clues to the "probability of unseen N-Grams" (p. 209, 2000). They include as their fourth of eight key concepts *Things Seen Once* and recommend using the count of wordforms seen a single time to provide a basis to estimate those things not seen in the training set and will likely appear in a test set 
+8. Whitespace: this was not discussed directly by Jurafsky and Martin. The intuition is that whitespace has little to do with context and excess whitespace will be removed
+
+In addition to shaping the initial strategy, the work by Jurafsky and Martin provided valuable insights on other aspects of implementing a predication model.
+
+* Historical context of the unsmoothed N-Gram and basis of probabilistic approach to predicting words using the Markov assumption to simplify probabilities by looking only at (n-1) or (n-2) previous words 
+* Importance of having a diverse corpora in order to improve generalizability of prediction among other corpora 
+* Comparative analysis of smoothing and discounting techniques to increase predictive power 
+*Introduction of backoff techniques to establish probabilities for otherwise unseen elements of an N-Gram 
+* Discussion of entropy and perplexity - which may prove to be a good choice as the single measure to help assess quality of the prediction model
+
+# Data Processing
+
+We have to understand the data, determine what should be done with the data, and generate the questions that need to be asked to ascertain whether the data is sufficient to do the job.This section briefly addresses the acquisition, processing, and exploration of the data.
+
+*Data Acquisition and Cleaning*
+
+SwiftKey is the corporate partner involved with this project. They produce software to aid users in rapidly entering text with higher accuracy on mobile devices. Based on their collaboration with Johns Hopkins University, a [data set](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip) was provided to the data scientists on this project. The dataset is a zip files including blog posts, news articles, and Twitter tweets in four languages (English, German, Finnish, and Russian). The data was downloaded using the R programming language (R Core Team, 2014) and the elements were extracted using the R text-mining package called `tm` (Feinerer. Hornik, & Artifex Software, 2014). The `PCorpus` function was used as it establishes a permanent database instead of a virtual one. This allowed a database to hold over 3.3 million documents in physical disk memory rather than completely in RAM to reserve processing capacity. <a href="#appendix-a---generating-training-and-testing-sets">Appendix A - Generating 
+Training and Testing Sets</a> provides the code and `seeds` used to generate the training and testing datasets.
+
+``` {r 1a-readTraininSettoClean, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+##
+## Read in dataset and clean for use. The DirSource "training" is a pointer to the location of the training corpus created
 ##
 library(tm)   # package used to read dataset
 library(filehash) # package used to update/maintain permanent corpus database
-myCorpus <- PCorpus(DirSource("training", #training contains blog 60% training set
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+myCorpus <- PCorpus(DirSource("training", encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+```
+
+The data set was cleaned using over 20 transformations that pre-processed the data for analysis. <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a> fully presents each of the transformations in detail. In general, those transformations included: conversion to lower case, ensuring apostrophes were retained to maintain contractions, include end-of-sentence <EOS> and number <NUM> tags, conversion of various ASCII codes to appropriate language wordforms, remove punctuation except apostrophe and <> symbols in <EOS> and <NUM>, remove web URLS, remove numbers, and remove excess whitespace. Intermittently in the process, the corpus was written back to disk and the database was re-initialized using the `filehash` package to reduce the size of data processing in RAM. Although one third of the way through processing the corpus had exceeded 1 GB in RAM, use of `filehash` kept this well below that. The final corpus of over 539,573 blog documents after all processing only 108 MB. It is worth noting the original data set of 899,288 blogs was over 205 MB.
+
+``` {r 1b-readTraininSettoClean, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Cleaning steps refined  over time
 ## Accomplished in three loops due to RAM limitations
@@ -217,6 +232,12 @@ myCorpus <- tm_map(myCorpus, stripWhitespace);dbInit("lastCorpus.db")
 write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
 # original training set 130 MB; clean training seet 108 MB
 ```
+
+
+
+
+
+*Exploratory Analysis*
 
 ``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
@@ -839,33 +860,40 @@ predict <-function(input,cluster=7){
 }
 ```
 
-# Data Processing
 
-*Data Acquisition and Cleaning*
-
-*Exploratory Analysis*
-
-
-## Acknowledgements
+# Acknowledgements
 First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
 
-## References
+# References
+
+Feinerer, I. Hornik, K., & Artifex Software. (2014, June 11). Tm: Text mining package (Version 0.6) [Software]. Available from [http://cran.r-project.org/web/packages/tm/index.html]( http://cran.r-project.org/web/packages/tm/index.html).
+
 Feinerer, I., Hornik, K., & Meyer, D. (2008, March). Text mining infrastructure in R. *Journal of Statistical Computing*, 25(5). Retrieved from [http://www.jstatsoft.org/v25/i05/paper](http://www.jstatsoft.org/v25/i05/paper).
 
 Jurafsky, D. & Martin, J.H. (2000). *Speech and language processing: An introduction to natural language processing, computational linguistics and speech recognition*. Englewood Cliffs, NJ: Prentice Hall.
 
-Richards, B. (1987). Type/token ratios:What do they really tell us? Journal of Child Language, 14, pp. 201209. Doi: 10:1017/S0305000900012885.
+R Core Team (2014, July 10). R: A language and environment for statistical computing. R Foundation for Statistical Computing (Version 3.1.1) [Software]. Vienna, Austria. Available from [http://www.R-project.org/]( http://www.R-project.org/).
+
+Richards, B. (1987). Type/token ratios:What do they really tell us? *Journal of Child Language*, 14, pp. 201209. Doi: 10:1017/S0305000900012885.
 
 Turing, A.M. (1950). Computing machinery and intelligence. *Mind*, 59, 433-460. Retrieved from [http://www.loebner.net/Prizef/TuringArticle.html](http://www.loebner.net/Prizef/TuringArticle.html).
 
 
 ******
+# Appendices
+
 ## Appendix A - Generating Training and Testing Sets
 
 ``` {r A-createDataSubsets, echo=TRUE, eval=FALSE, warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Create data subsets from original datasets provided
 ##
+
+###
+## Note: prior to running, create these three folders and extract the associated data into each - one corpus per folder:
+# Folder Names: blogs, news, twitter
+###
+
 library(tm) # Use tm package
 # Read in three English text data sets already extracted from .zip file
 # Used virtual corpus for this interim work
@@ -935,6 +963,12 @@ rm(list = ls()) #clean environment
 #
 ## Read in dataset and clean for use
 ##
+
+###
+## Note: after creating the blog training set "blogTrain.txt from the previous code, add a folder "training" and include "blogTrain.txt" in it.
+## Also and create folder "mod" to hold in-process cleaning data
+###
+
 library(tm)   # package used to read dataset
 library(filehash) # package used to update/maintain permanent corpus database
 myCorpus <- PCorpus(DirSource("training", #training contains blog 60% training set
