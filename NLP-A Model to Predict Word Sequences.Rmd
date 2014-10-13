@@ -1,10 +1,13 @@
 ---
 title: 'Natural Language Processing: A Model to Predict a Sequence of Words'
-author: "Gerald Gendron"
+author: 'Gerald Gendron - [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/)'
 date: "October 13, 2014"
 output:
   html_document:
     toc: yes
+  pdf_document:
+    toc: yes
+  word_document: default
 ---
 
 # Executive Summary
@@ -17,7 +20,10 @@ This report provides documentation describing the process and decisions used to 
 
 ##################################
 ##################################
-## For RMD purposes, please note that the entire body of code is place within the document to allow for runs of graphics. You will notice that most front "Chunks" are set to echo=FALSE and eval=FALSE. This is done to enable generation of the PDF report
+## For RMD purposes, please note that the entire body of code is place within 
+## the document to allow for runs of graphics. You will notice that most front
+## "Chunks" are set to echo=FALSE and eval=FALSE. This is done to enable 
+## generation of the PDF report
 ##################################
 ##################################
 
@@ -27,7 +33,8 @@ This report provides documentation describing the process and decisions used to 
 ##
 
 ###
-## Note: prior to running, create these three folders and extract the associated data into each - one corpus per folder:
+## Note: prior to running, create these three folders and extract the associated
+## data into each - one corpus per folder:
 # Folder Names: blogs, news, twitter
 ###
 
@@ -102,11 +109,11 @@ Data sciences are increasingly making use of Natural Language Processing combine
 
 # Literature Review
 
-*A brief history of text analysis*
+**An origin of natural language processing**
 
 Alan Turing (1950) opens his influential article "Computing Machinery and Intelligence" with the statment, "I propose to consider the question, 'Can machines think?'" (p. 433). He follows this by outlining something he calls the imagination game played by man A - known as label X, woman B - known as label Y, and interrogator C. The interrogator is able to ask questions of X or Y in order to attain the objective to properly identify whether "X is A and Y is B" (p. 433) or vice versa. Turing later refines the original question to read, "Are there imaginable digital computers which would do well in the imitation game?" (p. 442). In essence - to predict truth based on features or interrogation. He speaks to a machine teaching process made up of rewards and punishments enforcing orders in symbolic language. Overall, this Turing Test has become a basis of natural language processing - covering a broad array of uses such as spelling correction, speech recognition, author identification, and prediction of words based on preceding words. 
 
-*Literature review purpose and findings*
+**Literature review purpose and findings**
 
 At the outset of this project, course instructors provided us with various sources on natural language processing, text mining, and various R programming packages they felt would be useful. Further literature review was conducted in order to understand the field and extract clues for building a model. Primary goals of the literature review were to understand:
 
@@ -141,21 +148,23 @@ In addition to shaping the initial strategy, the work by Jurafsky and Martin pro
 
 We have to understand the data, determine what should be done with the data, and generate the questions that need to be asked to ascertain whether the data is sufficient to do the job.This section briefly addresses the acquisition, processing, and exploration of the data.
 
-*Data Acquisition and Cleaning*
+**Data Acquisition and Cleaning**
 
 SwiftKey is the corporate partner involved with this project. They produce software to aid users in rapidly entering text with higher accuracy on mobile devices. Based on their collaboration with Johns Hopkins University, a [data set](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip) was provided to the data scientists on this project. The dataset is a zip files including blog posts, news articles, and Twitter tweets in four languages (English, German, Finnish, and Russian). The data was downloaded using the R programming language (R Core Team, 2014) and the elements were extracted using the R text-mining package called `tm` (Feinerer. Hornik, & Artifex Software, 2014). The `PCorpus` function was used as it establishes a permanent database instead of a virtual one. This allowed a database to hold over 3.3 million documents in physical disk memory rather than completely in RAM to reserve processing capacity. <a href="#appendix-a---generating-training-and-testing-sets">Appendix A - Generating 
 Training and Testing Sets</a> provides the code and `seeds` used to generate the training and testing datasets.
 
 ``` {r 1a-readTraininSettoClean, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
-## Read in dataset and clean for use. The DirSource "training" is a pointer to the location of the training corpus created
+## Read in dataset and clean for use. The DirSource "training" is a pointer to 
+## the location of the training corpus created
 ##
 library(tm)   # package used to read dataset
 library(filehash) # package used to update/maintain permanent corpus database
-myCorpus <- PCorpus(DirSource("training", encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+myCorpus <- PCorpus(DirSource("training", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="myCorpus.db", dbType="DB1"))
 ```
 
-The data set was cleaned using over 20 transformations that pre-processed the data for analysis. <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a> fully presents each of the transformations in detail. In general, those transformations included: conversion to lower case, ensuring apostrophes were retained to maintain contractions, include end-of-sentence <EOS> and number <NUM> tags, conversion of various ASCII codes to appropriate language wordforms, remove punctuation except apostrophe and <> symbols in <EOS> and <NUM>, remove web URLS, remove numbers, and remove excess whitespace. Intermittently in the process, the corpus was written back to disk and the database was re-initialized using the `filehash` package to reduce the size of data processing in RAM. Although one third of the way through processing the corpus had exceeded 1 GB in RAM, use of `filehash` kept this well below that. The final corpus of over 539,573 blog documents after all processing only 108 MB. It is worth noting the original data set of 899,288 blogs was over 205 MB.
+A preliminary exploration of the corpus indicated a number of transformations were required on the raw data to prepare it for statistical modeling. The data set was cleaned using over 20 transformations that pre-processed the data for analysis. <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a> fully presents each of the transformations in detail. In general, those transformations included: conversion to lower case, ensuring apostrophes were retained to maintain contractions, include end-of-sentence <EOS> and number <NUM> tags, conversion of various ASCII codes to appropriate language wordforms, remove punctuation except apostrophe and <> symbols in <EOS> and <NUM>, remove web URLS, remove numbers, and remove excess whitespace. Intermittently in the process, the corpus was written back to disk and the database was re-initialized using the `filehash` package to reduce the size of data processing in RAM. Although one third of the way through processing the corpus had exceeded 1 GB in RAM, use of `filehash` kept this well below that. The final corpus of over 539,573 blog documents after all processing only 108 MB. It is worth noting the original data set of 899,288 blogs was over 205 MB.
 
 ``` {r 1b-readTraininSettoClean, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
@@ -182,7 +191,8 @@ for (j in seq(myCorpus)) {
 write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # writes corpus to permanent disc
 # reads back in corpus...this method reduced 908MB corpus to 137MB
 myCorpus <- PCorpus(DirSource("mod", 
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
+     encoding="UTF-8",mode="text"),
+          dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
 
 for (j in seq(myCorpus)) {
      # tranforms various ASCII codes to appropriate language 
@@ -191,7 +201,8 @@ for (j in seq(myCorpus)) {
      myCorpus[[j]][[1]] <-gsub("\\&", " and ", myCorpus[[j]][[1]])
      print("9 of 18 transformations complete") #provides progress to user
      # removes all punctuation except apostrophe and <> symbols in <EOS>
-     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ",
+          myCorpus[[j]][[1]])
      # removes web site URLs
      myCorpus[[j]][[1]] <-gsub(" www(.+) ", " ", myCorpus[[j]][[1]])
      # removes all single letters except "a" and "i"
@@ -199,10 +210,11 @@ for (j in seq(myCorpus)) {
      print("12 of 18 transformations complete") #provides progress to user
 }
 
-write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to permanent disc
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to disc
 # reduced 937 MB corpus to 133 MB
 myCorpus <- PCorpus(DirSource("mod",
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db", dbType="DB1"))
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db",
+          dbType="DB1"))
 
 for (j in seq(myCorpus)) {
      # removes errant apostrohes introduced by transformations
@@ -233,14 +245,58 @@ write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
 # original training set 130 MB; clean training seet 108 MB
 ```
 
+**Exploratory Analysis**
+
+Clean data is a necessary – but not sufficient – condition to developing a prediction algorithm. This step is about understanding: understanding the relationships between the words and sentences, and other observable artifacts useful to set expectations in the model development. Highlights of the many hours of exploration including an understanding of relationships between vocabulary size and unique words, distributions of various N-Grams, and information that helped reevaluate the original strategy after the literature review. Table 1 provides statistics on the full corpora. It shows the total number of documents in the each genre of the corpus. These values also represent the total line counts because the loading method treated each article as a single line regardless of length. For instance, the longest line is a blog of 40,833 characters. 
+
+
+*Table 1: Characterizing the Corpora by Word Count, Type, Ratios, Diversity*
+       
+Source | Documents | Vocabulary (V) | Word Types (T) | TTR (T/V) | Diversity 
+------ | --------- | -------------- | -------------- | --------- | ---------
+Blog   |   899,288 |     37,334,131 |      1,103,548 |   0.030   |  127.71
+News   |    77,259 |      2,643,969 |        197,858 |   0.075   |   86.04
+Tweets | 2,360,148 |     30,373,543 |      1,290,170 |   0.042   |  165.53
+Corpus | 3,336,695 |     70,351,643 |      2,123,809 |   0.030   |  179.04
+
+Table 1 also shows the total vocabulary (V) equaling the number of total word tokens present in each genre. Just over half the complete Corpus is composed of the blog posts. Word types (T) are the number of unique words within the Vocabulary. The Type/Token Ratio(TTR) is a well known measure of language comparison. It is simply the total word types divided by vocabulary (Richards, 1987).  The TTR indicates complexity, with higher numbers indicating a more complex genre. Tweets are the most complex because it takes more unique words to build a smaller vocabulary. This measure was used to make a decision to limit the data for the model to just blog entries. News articles tend to be overly repetitive with non-conversational language and tweets are a language unto themselves with many "created" words.
+
+Diversity is also provided in Table 1. According to Richards (1987) it is a more useful measure because TTR will tend to fall off as a function of growing vocabulary alone. Diversity is defined as "A measure of vocabulary diversity that is approximately independent of sample size is the number of different words divided by the square root of twice the number of words in the sample" (Richards, p.208). It is robust and is positively correlated to the tokens and it flattens out at some point. Table 2 shows the effect on diversity as the size of the vocabulary (document numbers) increases. There is a relative flattening out at 60 percent of the total documents. This is in line with a common technique for separating data into a 60 percent training set, a 20 percent test set, and a 20 percent validation set. This helped validate the selection of using a training set composed of 60 percent of all blogs in the dataset. Notice in Table 3 that the widely used measure of Type/Token Ratio shows the similarity in complexity as represented by the blogs and the entire corpora of blogs, news, and tweets.
+
+*Table 2: Effect of vocabulary size on diversity measures*
+
+ Measure  |  Type  |   50  |   500 | 5,000 |   50K  |   60%  |   80%  | Entire
+--------- | ------ | ----- | ----- | ----- | ------ | ------ | ------ | ------
+Diversity |  Blog  | 16.38 | 34.17 | 57.31 |  83.07 | 118.55 | 123.72 | 127.71
+Diversity | Corpus | 22.68 | 45.22 | 72.56 | 103.84 | 163.43 | 172.10 | 179.05
+
+*Table 3: Effect of vocabulary size on Type/Token Ratios*
+
+ Measure  |  Type  |   50  |   500 | 5,000 |   50K  |   60%  |   80%  | Entire
+--------- | ------ | ----- | ----- | ----- | ------ | ------ | ------ | ------
+TTR       |  Blog  |  0.51 |  0.31 |  0.18 |   0.08 |   0.04 |   0.03 |   0.03
+TTR       | Corpus |  0.49 |  0.29 |  0.15 |   0.07 |   0.04 |   0.03 |   0.03
+
+
+
+ 
+ 
 
 
 
 
-*Exploratory Analysis*
 
 
-now 
+# Statistical Modeling
+
+**Predictive modeling**
+
+
+**Creative exploration**
+
+
+
+
 
 ``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
@@ -864,6 +920,15 @@ predict <-function(input,cluster=7){
 ```
 
 
+
+
+# Reproducible documentation
+
+All of the data processing, analysis, and results are fully reproducible by executing the code in the appendices. Alternatively, an R markdown file is freely available at [https://github.com/jgendron/datasciencecoursera](https://github.com/jgendron/datasciencecoursera/blob/master/NLP-A%20Model%20to%20Predict%20Word%20Sequences.Rmd). Those interested in collaboratiing on this or similar projects may contact the author at [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/).
+
+# Creating a data product
+
+
 # Acknowledgements
 First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
 
@@ -877,7 +942,7 @@ Jurafsky, D. & Martin, J.H. (2000). *Speech and language processing: An introduc
 
 R Core Team (2014, July 10). R: A language and environment for statistical computing. R Foundation for Statistical Computing (Version 3.1.1) [Software]. Vienna, Austria. Available from [http://www.R-project.org/]( http://www.R-project.org/).
 
-Richards, B. (1987). Type/token ratios:What do they really tell us? *Journal of Child Language*, 14, pp. 201209. Doi: 10:1017/S0305000900012885.
+Richards, B. (1987). Type/token ratios:What do they really tell us? *Journal of Child Language*, 14, pp. 201209. Doi: 10:1017/S0305000900012885. Retrieved from [http://hfroehlich.files.wordpress.com/2013/05/s0305000900012885a.pdf](http://hfroehlich.files.wordpress.com/2013/05/s0305000900012885a.pdf).
 
 Turing, A.M. (1950). Computing machinery and intelligence. *Mind*, 59, 433-460. Retrieved from [http://www.loebner.net/Prizef/TuringArticle.html](http://www.loebner.net/Prizef/TuringArticle.html).
 
@@ -888,19 +953,31 @@ Turing, A.M. (1950). Computing machinery and intelligence. *Mind*, 59, 433-460. 
 ## Appendix A - Generating Training and Testing Sets
 
 ``` {r A-createDataSubsets, echo=TRUE, eval=FALSE, warning=FALSE,error=FALSE,cache=TRUE}
+
+##################################
+##################################
+## For RMD purposes, please note that the entire body of code is place within 
+## the document to allow for runs of graphics. You will notice that most front
+## "Chunks" are set to echo=FALSE and eval=FALSE. This is done to enable 
+## generation of the PDF report
+##################################
+##################################
+
+
 ##
 ## Create data subsets from original datasets provided
 ##
 
 ###
-## Note: prior to running, create these three folders and extract the associated data into each - one corpus per folder:
+## Note: prior to running, create these three folders and extract the associated
+## data into each - one corpus per folder:
 # Folder Names: blogs, news, twitter
 ###
 
 library(tm) # Use tm package
 # Read in three English text data sets already extracted from .zip file
 # Used virtual corpus for this interim work
-tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"),
+tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"), 
                  readerControl=list(language="en"))
 blog <- VCorpus(DirSource("blogs", encoding = "UTF-8"),
                 readerControl=list(language="en"))
@@ -963,19 +1040,22 @@ rm(list = ls()) #clean environment
 ## Appendix B - Reading in the Data and Cleaning
 
 ``` {r B-readTraininSettoClean, echo=TRUE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
-#
-## Read in dataset and clean for use
+##
+## Read in dataset and clean for use. The DirSource "training" is a pointer to 
+## the location of the training corpus created
 ##
 
 ###
-## Note: after creating the blog training set "blogTrain.txt from the previous code, add a folder "training" and include "blogTrain.txt" in it.
+## Note: after creating the blog training set "blogTrain.txt from the previous
+## code, add a folder "training" and include "blogTrain.txt" in it.
 ## Also and create folder "mod" to hold in-process cleaning data
 ###
 
 library(tm)   # package used to read dataset
 library(filehash) # package used to update/maintain permanent corpus database
-myCorpus <- PCorpus(DirSource("training", #training contains blog 60% training set
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+myCorpus <- PCorpus(DirSource("training", encoding="UTF-8",mode="text"),
+                    dbControl=list(dbName="myCorpus.db", dbType="DB1"))
+
 ##
 ## Cleaning steps refined  over time
 ## Accomplished in three loops due to RAM limitations
@@ -1000,7 +1080,8 @@ for (j in seq(myCorpus)) {
 write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # writes corpus to permanent disc
 # reads back in corpus...this method reduced 908MB corpus to 137MB
 myCorpus <- PCorpus(DirSource("mod", 
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
+     encoding="UTF-8",mode="text"),
+          dbControl=list(dbName="halfCorpus.db", dbType="DB1"))
 
 for (j in seq(myCorpus)) {
      # tranforms various ASCII codes to appropriate language 
@@ -1009,7 +1090,8 @@ for (j in seq(myCorpus)) {
      myCorpus[[j]][[1]] <-gsub("\\&", " and ", myCorpus[[j]][[1]])
      print("9 of 18 transformations complete") #provides progress to user
      # removes all punctuation except apostrophe and <> symbols in <EOS>
-     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ", myCorpus[[j]][[1]])
+     myCorpus[[j]][[1]] <-gsub("[^[:alnum:][:space:]\'<>]", " ",
+          myCorpus[[j]][[1]])
      # removes web site URLs
      myCorpus[[j]][[1]] <-gsub(" www(.+) ", " ", myCorpus[[j]][[1]])
      # removes all single letters except "a" and "i"
@@ -1017,10 +1099,11 @@ for (j in seq(myCorpus)) {
      print("12 of 18 transformations complete") #provides progress to user
 }
 
-write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to permanent disc
+write(myCorpus[[1]][[1]],"./mod/blogTrain.txt")  # writes corpus to disc
 # reduced 937 MB corpus to 133 MB
 myCorpus <- PCorpus(DirSource("mod",
-     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db", dbType="DB1"))
+     encoding="UTF-8",mode="text"),dbControl=list(dbName="lastCorpus.db",
+          dbType="DB1"))
 
 for (j in seq(myCorpus)) {
      # removes errant apostrohes introduced by transformations
@@ -1700,6 +1783,6 @@ predict <-function(input,cluster=7){
 ******
 ## Appendix G - Development Platform Information
 
-``` {r H-sysInfo, echo=TRUE}
+``` {r G-sysInfo, echo=FALSE}
 sessionInfo()
 ```
