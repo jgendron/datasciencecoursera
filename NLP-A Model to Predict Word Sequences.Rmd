@@ -13,14 +13,32 @@ This report provides documentation describing the process and decisions used to 
 
 *Keywords: natural language processing, text mining, predictive text analytics, N-Gram, Good-Turing Smoothing, Katz back off*
 
-``` {r 0-createDataSubsets, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE,include=FALSE}
+## Understanding the Problem
+
+A most important aspect at the outset of a data analysis project is to understand the problem. With the advent of social media and blogs, the information value of raw text continues to increase. The problem that exists is in analyzing a large corpus of text to discover the structure and arrangement of words within the data in order to analyze the corpus using computational methods. 
+The essence of this project is to take a corpus (a bodey) of text from various sources, clean and analyze that text data, and build a predictive model to present the next likely word in a stream of text provided by a user. User input could range from formal, professional communication to informal, short messages - such as social media. Therefore, knowledge of the data sources in the corpus is essential. As a concrete example, a user may type into their mobile device - "I would like to". A predictive text model would present the most likely options for what the next word might be such as *"eat"*, *"go"*, or *"have"* - to name a few.
+
+Data sciences are increasingly making use of Natural Language Processing combined with statistical methods developed within the arts and humanities decades ago to characterize and leverage the streams of data that are text based and not inherently quantitative. There are many techniques available within the R programming language to work with text to work with them quantitatively. A key aspect of this project is to discern which techniques best promote accuracy and scalability for large data sets.
+
+``` {r 0-createDataSubsets, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
+
+##################################
+##################################
+## For RMD purposes, please note that the entire body of code is place within the
+## document to allow for runs of grpahics. You will notice that most front "Chunks"
+## are set to echo=FALSE and eval=FALSE. This is done to enable generation of the
+## PDF report
+##################################
+##################################
+
+
 ##
 ## Create data subsets from original datasets provided
 ##
 library(tm) # Use tm package
 # Read in three English text data sets already extracted from .zip file
 # Used virtual corpus for this interim work
-tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"),
+tweet <- VCorpus(DirSource("twitter", encoding = "UTF-8"), 
                  readerControl=list(language="en"))
 blog <- VCorpus(DirSource("blogs", encoding = "UTF-8"),
                 readerControl=list(language="en"))
