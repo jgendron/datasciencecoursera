@@ -239,6 +239,9 @@ write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
 
 *Exploratory Analysis*
 
+
+now 
+
 ``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
 ## Code uses blogTrain.txt to generate list of all 1-gram (unigrams)
