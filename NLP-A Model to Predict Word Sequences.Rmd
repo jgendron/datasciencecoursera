@@ -111,7 +111,7 @@ Data sciences are increasingly making use of Natural Language Processing combine
 
 **An origin of natural language processing**
 
-Alan Turing (1950) opens his influential article "Computing Machinery and Intelligence" with the statment, "I propose to consider the question, 'Can machines think?'" (p. 433). He follows this by outlining something he calls the imagination game played by man A - known as label X, woman B - known as label Y, and interrogator C. The interrogator is able to ask questions of X or Y in order to attain the objective to properly identify whether "X is A and Y is B" (p. 433) or vice versa. Turing later refines the original question to read, "Are there imaginable digital computers which would do well in the imitation game?" (p. 442). In essence - to predict truth based on features or interrogation. He speaks to a machine teaching process made up of rewards and punishments enforcing orders in symbolic language. Overall, this Turing Test has become a basis of natural language processing - covering a broad array of uses such as spelling correction, speech recognition, author identification, and prediction of words based on preceding words. 
+Alan Turing (1950) opens his influential article "Computing Machinery and Intelligence" with the statement, "I propose to consider the question, 'Can machines think?'" (p. 433). He follows this by outlining something he calls the imagination game played by man A - known as label X, woman B - known as label Y, and interrogator C. The interrogator is able to ask questions of X or Y in order to attain the objective to properly identify whether "X is A and Y is B" (p. 433) or vice versa. Turing later refines the original question to read, "Are there imaginable digital computers which would do well in the imitation game?" (p. 442). In essence - to predict truth based on features or interrogation. He speaks to a machine teaching process made up of rewards and punishments enforcing orders in symbolic language. Overall, this Turing Test has become a basis of natural language processing - covering a broad array of uses such as spelling correction, speech recognition, author identification, and prediction of words based on preceding words. 
 
 **Literature review purpose and findings**
 
@@ -123,7 +123,7 @@ At the outset of this project, course instructors provided us with various sourc
 
 This section is not a comprehensive overview of over 40 sources reviewed but merely a summary of two works most influential in shaping the modeling approach taken in this project. 
 
-Course notes for the Capstone project invited participants to become familiar with the R packages on NLP (openNLP) and text mining (tm). Feinerer, Hornik, and Meyer (2008) provide a good overview of the essential aspects of these packages. Noteworthy was their information about: reading in corpora into the R environment, explaining functions to transform the data, explaining stemming, stopwords, and tagging parts of speech, considering the issue of text sparsity, and understanding the fundamental of count based analysis. 
+Course notes for the Capstone project invited participants to become familiar with the R packages on NLP `openNLP` and text mining `tm`. Feinerer, Hornik, and Meyer (2008) provide a good overview of the essential aspects of these packages. Noteworthy was their information about: reading in corpora into the R environment, explaining functions to transform the data, explaining stemming, stopwords, and tagging parts of speech, considering the issue of text sparsity, and understanding the fundamental of count based analysis. 
 
 Jurafsky and Martin (2000) provide a seminal work within the domain of NLP. The authors present a key approach for building prediction models called the N-Gram, which relies on knowledge of word sequences from *(N – 1)* prior words. It is a type of language model based on counting words in the corpora to establish probabilities about next words. Overall, Jurafsky and Martin's work had the greatest influence on this project in choosing among many possible strategies for developing a model to predict word selection. It addresses multiple perspectives of the topics found in Feinerer, Hornik, and Meyer. The following approaches and assumptions were chosen For purposes of building an initial model. They may be adapted as models are refined to increase prediction accuracy. 
 
@@ -141,7 +141,7 @@ In addition to shaping the initial strategy, the work by Jurafsky and Martin pro
 * Historical context of the unsmoothed N-Gram and basis of probabilistic approach to predicting words using the Markov assumption to simplify probabilities by looking only at (n-1) or (n-2) previous words 
 * Importance of having a diverse corpora in order to improve generalizability of prediction among other corpora 
 * Comparative analysis of smoothing and discounting techniques to increase predictive power 
-*Introduction of backoff techniques to establish probabilities for otherwise unseen elements of an N-Gram 
+*Introduction of back off techniques to establish probabilities for otherwise unseen elements of an N-Gram 
 * Discussion of entropy and perplexity - which may prove to be a good choice as the single measure to help assess quality of the prediction model
 
 # Data Processing
@@ -249,7 +249,6 @@ write(myCorpus[[1]][[1]],"./mod/blogTrain.txt") # write PCorpus to disc
 
 Clean data is a necessary – but not sufficient – condition to developing a prediction algorithm. This step is about understanding: understanding the relationships between the words and sentences, and other observable artifacts useful to set expectations in the model development. Highlights of the many hours of exploration including an understanding of relationships between vocabulary size and unique words, distributions of various N-Grams, and information that helped reevaluate the original strategy after the literature review. Table 1 provides statistics on the full corpora. It shows the total number of documents in the each genre of the corpus. These values also represent the total line counts because the loading method treated each article as a single line regardless of length. For instance, the longest line is a blog of 40,833 characters. 
 
-
 *Table 1: Characterizing the Corpora by Word Count, Type, Ratios, Diversity*
        
 Source | Documents | Vocabulary (V) | Word Types (T) | TTR (T/V) | Diversity 
@@ -282,7 +281,6 @@ Understanding the distribution among the word tokens helps shape expectations of
 * <a href="#c-1-building-the-1-gram-unigram-model">C-1: Building the 1-Gram (unigram) Model</a>
 * <a href="#c-2-building-the-2-gram-bigram-model">C-2: Building the 2-Gram (bigram) Model</a> 
 * <a href="#c-3-building-the-3-gram-trigram-model">C-3: Building the 3-Gram (trigram) Model</a>
-
 
 ``` {r 2-buildOneGramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
@@ -694,7 +692,7 @@ threegramDF<-threegramDF[order(threegramDF$counts,decreasing=T),]
 threegramDF$counts<-as.numeric(threegramDF$counts)
 ```
 
-```{r generateDistibution plots, eval=FALSE, echo=FALSE, fig.height=2.5, cache=TRUE}
+```{r generateDistibution plots, eval=TRUE, echo=FALSE, fig.height=2.5, cache=TRUE}
 ## Plot distributions of N-Grams
 par(mfrow=c(1,3))
 distUni<-round(0.5*dim(unigramDF)[[1]])
@@ -707,13 +705,6 @@ plot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",
         xlab="Top 50% of 2-Grams", col="darkslateblue",ylim=c(.00001,6))
 plot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",
         xlab="Top 50% of 3-Grams", col="darkslateblue",ylim=c(.00001,6))
-
-# barplot(log10(unigramDF$counts[1:distUni]+1),ylab="log10 (Frequency)",
-#         xlab="Top 50% of 1-Grams", border="darkslateblue",ylim=c(.00001,6))
-# barplot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",
-#         xlab="Top 50% of 2-Grams", border="darkslateblue",ylim=c(.00001,6))
-# barplot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",
-#         xlab="Top 50% of 3-Grams", border="darkslateblue",ylim=c(.00001,6))
 ```
 
 Prior to plotting, the frequencies were sorted in decreasing order and the x-axis is an index. Therefore, the far left of each plot indicates an N-Gram with the highest frequency. Notice a few features of the data. Although there are far fewer unigrams (198,576) than bigrams (3,525,643), than trigrams (17,021,221), they distributions are more there are a much more skewed right as the level of N increases. This indicates very long tails (more frequencies of 1, 2, etc.) but at the same time much higher frequencies of particular words (such as "the", "and", "to", etc.). The three plots are all logarithmic in the y-axis and set at a common y-axis limit to aid in comparison. In logarithmic scale log10(1)=0. Figure 1 gives an idea of how many singletons exist:
@@ -723,11 +714,11 @@ Prior to plotting, the frequencies were sorted in decreasing order and the x-axi
 appear (of note, all single 3-grams were removed from the dataframe due to RAM 
 - therefore, no plot points appear at log10(frequency)=0)
 
-Jurafsky and Martin (2000) also describe the importance of "frequencies of frequencies". This is the frequency of the frequency 20 (let's say) occuring. Those tables were generated based on. As a concrete example, assume the 1-gram "cat" appeared three times in the corpus. Also, assume that the words "dog", "flower", and "automobile" appeared three times in the corpus. The frequency of frequency for k equal to three is the value four. In other words, the frequency "three" appeared four times. Hence, the term frequency of frequencies. Hence the term "frequency of frequencies". In other words, we examine Nc, the number of N-grams that occur c times. We refer to the number of N-grams that occur c times as the frequency of frequency c" (Jurafsky & Martin, p. 212). The frequencies of frequencies view of the corpus is an important feature for N-Grams because these counts enable predictions of other words. The frequencies reduce rapidly comparing unigrams to trigrams. Information from th e literature indicate that these frequency tables respond well to regression analysis to smooth out the information and avoid having to keep all the data in storage. A visualization of these frequencies is provided in Figure 2.
+Jurafsky and Martin (2000) also describe the importance of "frequencies of frequencies". This is the frequency of the frequency 20 (let's say) occurring. Those tables were generated based on. As a concrete example, assume the 1-gram "cat" appeared three times in the corpus. Also, assume that the words "dog", "flower", and "automobile" appeared three times in the corpus. The frequency of frequency for k equal to three is the value four. In other words, the frequency "three" appeared four times. Hence, the term frequency of frequencies. Hence the term "frequency of frequencies". In other words, we examine Nc, the number of N-grams that occur c times. We refer to the number of N-grams that occur c times as the frequency of frequency c" (Jurafsky & Martin, p. 212). A visualization of these frequencies is provided in Figure 2. 
 
 *Figure 2: Viewing frequencies of frequencies of various N-Grams*
 
-``` {r freqFreq, echo=FALSE, eval=FALSE, fig.height=2.5, cache=TRUE}
+``` {r freqFreq, echo=FALSE, eval=TRUE, fig.height=2.5, cache=TRUE}
 par(mfrow = c(1,3))
 uni.freqfreq<-read.csv("uni.freqfreq.csv")
 bi.freqfreq<-read.csv("bi-freqfreq.csv")
@@ -745,6 +736,8 @@ scatter.smooth(log10(tri.freqfreq$Tri.Var), log10(tri.freqfreq$Tri.Freq),
                col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
 ```
 
+The frequencies of frequencies view of the corpus is an important feature for N-Grams because these counts enable predictions of other words. The frequencies reduce rapidly comparing unigrams to trigrams. Information from the e literature indicate that these frequency tables respond well to regression analysis to smooth out the information and avoid having to keep all the data in storage. A visualization of these frequencies is provided in Figure 2.
+
 # Statistical Modeling
 
 The overall method used two generate the first model is based on the techniques we learned in the specialization course. Specifically to take the full corpus and break it up into a training set, a developmental test set, and a test set (terms from Jurafsky and Martin). The objective of the modeling phase is to create a model that has that balances accuracy with speed and scalability given that we expect a very large data set and the working corpus. Then we can can revise algorithms to improve either accuracy, speed, or both if possible.
@@ -753,7 +746,7 @@ The overall method used two generate the first model is based on the techniques 
 
 As noted in the literature review, the strategy selected was to build an N-Gram model augmented with Good Turing Smoothing methods. Initially, it appeared a full Markov matrix would be necessary; however, it was the Markovian properties afforded by N-Gram modeling. In other words, it does not matter the length of the phrase – one can predict a word on a trigram, bigram, or even unigram (Jurafsky and Martin, 2000).
 
-Continuing with the cleaned and explored corpus, the `tau` package in the R programming environment was used to tokenize and build N-Grams at the N:n=1, 2, and 3 levels. This proved to be a very efficient way to store the data because it collapsed entire matrices into small number of columns (between three and five), albeit having very long numbers of observations. To give an idea of the size of the N-Ggrams the table below shows the number of observations for the 1-, 2-, 3-Gram models.
+Continuing with the cleaned and explored corpus, the `tau` package in the R programming environment was used to tokenize and build N-Grams at the N:n=1, 2, and 3 levels. This proved to be a very efficient way to store the data because it collapsed entire matrices into small number of columns (between three and five), albeit having very long numbers of observations. To give an idea of the size of the N-Grams the table below shows the number of observations for the 1-, 2-, 3-Gram models.
 
 N-Gram |  Instances
 ------ | -----------
@@ -854,11 +847,11 @@ rm(list=ls())
   4   |	3.36   |	 3.13   |	  3.21
   5   |   4.30   |   4.15   |	  4.29 
 
-The first prototype of the predictive model was run against test data. At this point, Katz back off approaches had been researched but were not implemented in the algorithms. The basic flow of the user interface with the algorigthm:
+The first prototype of the predictive model was run against test data. At this point, Katz back off approaches had been researched but were not implemented in the algorithms. The basic flow of the user interface with the algorithm:
 
 * the user inputs two words (a 2-gram) to the `predict` function – with the goal of see ideas of a third word
-* the 2-gram is searched for in the trigram model lookup table
-* if that 2-gram does not exist, a simple message appears that the word did not exist in the lookup table (in prototype only)
+* the 2-gram is searched for in the trigram model look-up table
+* if that 2-gram does not exist, a simple message appears that the word did not exist in the look-up table (in prototype only)
 * if the bigram is found, a subset of all 3-grams starting with that 2-gram are generated
 * the algorithm next uses the Good-Turing Smoothing model to update the count for each element of the subset where (K:k < 5)
 * the probability of the resulting trigram options is calculated by dividing the count of the trigram by the count of the bigram
@@ -875,8 +868,9 @@ Another very important change was that in developing the trigram table processin
 
 Those 54 dataframes were then slowly condensed through the `merge` function to accumulate all of the counts so as to not eliminate a single trigram if it appeared in one data frame when it actually could appear and others. Once all the data frames were consolidated - and consolidated - and consolidated again, the total number of single trigrams amounted to over 15,000,000 trigrams. The final dataframe of trigrams for the model ended up being 1,464,904 observations. Reducing the dataframe increased speed and scalability. As for accuracy, this update model was run against the test sets and it increased accuracy to approximately 40 percent.
 
-One last modification is worth discussing. The size of the three dataframes was a concern when loading it into a web-based environment. The initial and revised model used a design relying on a two-gram and a three-gram data frame. This amounted to 170.8 MB of data. Some experimentation was conducted to discern the effect of adding end of sentence markers <EOS>. This had a significant result and reduced the table sizes by 20 – 30 percent in terms of overall numbers of observations. An idea then emerged to eliminate the two-gram table from the model. Its purpose was a lookup table to determine if there were any 3-grams in the model. It was realized that the three-gram model already contained all the 2-grams and 1-grams. A simple `grep` command allowed the dataframe to expand on the server side to include the bigram and the unigram.
+One last modification is worth discussing. The size of the three dataframes was a concern when loading it into a web-based environment. The initial and revised model used a design relying on a two-gram and a three-gram data frame. This amounted to 170.8 MB of data. Some experimentation was conducted to discern the effect of adding end of sentence markers <EOS>. This had a significant result and reduced the table sizes by 20 – 30 percent in terms of overall numbers of observations. An idea then emerged to eliminate the two-gram table from the model. Its purpose was a look-up table to determine if there were any 3-grams in the model. It was realized that the three-gram model already contained all the 2-grams and 1-grams. A simple `grep` command allowed the dataframe to expand on the server side to include the bigram and the unigram. The Katz back method was added into the algorithm to compensate for the elimination of single trigrams. This eliminated the earlier error messages that "no options could be provided" to the user. All told, these enhancements reduces the web-based model to a relies on a 42 MB CSV file that is scalable on all laptops, desktops, and mobile platforms tested. Previous coursework using the Shiny.io utility has successfully manipulated input data sets of that size and magnitude. 
 
+The final prediction model is available in <a href="#appendix-e---prediction-model">Appendix E - Prediction Model</a>.
 
 ``` {r 6-predictingngramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ########
@@ -1031,24 +1025,20 @@ predict <-function(input,cluster=7){
 }
 ```
 
-
-
-
 # Reproducible documentation
 
-All of the data processing, analysis, and results are fully reproducible by executing the code in the appendices. Alternatively, an R markdown file is freely available at [https://github.com/jgendron/datasciencecoursera](https://github.com/jgendron/datasciencecoursera/blob/master/NLP-A%20Model%20to%20Predict%20Word%20Sequences.Rmd). Those interested in collaboratiing on this or similar projects may contact the author at [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/).
+All of the data processing, analysis, and results are fully reproducible by executing the code in the appendices. Alternatively, an R markdown file is freely available at [https://github.com/jgendron/datasciencecoursera](https://github.com/jgendron/datasciencecoursera/blob/master/NLP-A%20Model%20to%20Predict%20Word%20Sequences.Rmd). Those interested in collaborating on this or similar projects may contact the author at [LinkedIn: jaygendron](http://www.linkedin.com/in/jaygendron/).
 
-# Results
+# Results - Creating a data product
 
-
-## Creating a data product
+All told, these enhancements reduces the web-based model to a relies on a 42 MB CSV file that is scalable on all laptops, desktops, and mobile platforms tested. Previous coursework using the Shiny.io utility has successfully manipulated input data sets of that size and magnitude. Once loaded, the methods used to access the data frame allow the model to load in less than two minutes and subsequent queries of the model provide near instantaneous results to the user after they provide two words as input. They are presented with a list of possible end words to the complete the phrase and tools to adjust the amount of information they see. The interactive web-based model is available at the Shiny.io web site under the link [https://jgendron.shinyapps.io/predictngram/](https://jgendron.shinyapps.io/predictngram/).
 
 # Conclusions
 
-In this analysis, we determined common relationships between the various sub-corpus elements, the vocabulary, and word types, and their impacts on predictive power. Using information learned earlier during exploratory data analysis, the algorithms were refined to generate lookup tables that balanced depth of information with speed of processing. There was a subset of the corpus (specifically, 60 percent of the blog corpus) that produced an optimized balance between these competing properties. Through literature review, the Good-Turing approach was employed to developed the tables of counts which enabled prediction. The Katz Backoff approach was implemented in the event a particular three-word phrase was not found in the lookup table. This analysis suggests that a predictive model can be built, but it is most useful for predicting common word stems as opposed to highly specialized language needs of a user.
+In this analysis, we determined common relationships between the various sub-corpus elements, the vocabulary, and word types, and their impacts on predictive power. Using information learned earlier during exploratory data analysis, the algorithms were refined to generate look-up tables that balanced depth of information with speed of processing. There was a subset of the corpus (specifically, 60 percent of the blog corpus) that produced an optimized balance between these competing properties. Through literature review, the Good-Turing approach was employed to developed the tables of counts which enabled prediction. The Katz Back off approach was implemented in the event a particular three-word phrase was not found in the look-up table. This analysis suggests that a predictive model can be built, but it is most useful for predicting common word stems as opposed to highly specialized language needs of a user.
 
 # Acknowledgements
-First, I would like to very much like to thank my wife - my parter - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
+First, I would like to very much like to thank my wife - my partner - for all her understanding and support. Not only during this Capstone course, but through the entire sequence of the Data Science Specialization. She is *amazing* and for that I am eternally grateful. Thanks also to Dr. Thomas Bock for his explanation of key some mathematical concepts. Lastly, I would be remiss if I did not acknowledge the power of collaborative group dynamics. Many, many ideas and solutions are rooted in part to the generous comments from my colleagues on the Capstone Discussion Forum. I would like to thank and acknowledge the entire beta class who provide sage advice and support in that collaborative space.
 
 # References
 
@@ -1065,7 +1055,6 @@ R Core Team (2014, July 10). R: A language and environment for statistical compu
 Richards, B. (1987). Type/token ratios:What do they really tell us? *Journal of Child Language*, 14, pp. 201209. Doi: 10:1017/S0305000900012885. Retrieved from [http://hfroehlich.files.wordpress.com/2013/05/s0305000900012885a.pdf](http://hfroehlich.files.wordpress.com/2013/05/s0305000900012885a.pdf).
 
 Turing, A.M. (1950). Computing machinery and intelligence. *Mind*, 59, 433-460. Retrieved from [http://www.loebner.net/Prizef/TuringArticle.html](http://www.loebner.net/Prizef/TuringArticle.html).
-
 
 ******
 # Appendices
@@ -1892,11 +1881,11 @@ predict <-function(input,cluster=7){
 ******
 ## Appendix F - Glossary of Key Terms
 
-**Good-Turing Discounting:** Termed Good-Turing smoothing, it is a technique to re-estimate probability mass to assign N-Grams with zero or low counts by discounting from those occurring more often.")
+**Good-Turing Discounting:** Termed Good-Turing smoothing, it is a technique to re-estimate probability mass to assign N-Grams with zero or low counts by discounting from those occurring more often."
 
-**Katz back off:** Termed back off N-Gram modeling, it was developed in 1987 by Katz which predicts first based on non-zero, higher-order N-Grams and will "backoff" to a lower-order N-Gram if there is zero evidence of the higher-order N-Gram.
+**Katz back off:** Termed back off N-Gram modeling, it was developed in 1987 by Katz which predicts first based on non-zero, higher-order N-Grams and will "back off" to a lower-order N-Gram if there is zero evidence of the higher-order N-Gram.
 
-**N-Gram:** A special type of wordform which looks *(N - n) words into the past and possesses the memoryless properties of a Markov model. A 3-gram looks at the previous 2-gram to make the prediction.
+**N-Gram:** A special type of wordform which looks *(N - n) words into the past and possesses the memory less properties of a Markov model. A 3-gram looks at the previous 2-gram to make the prediction.
 
 **N-Gram cluster:** In calculating N-Grams, many probabilities are actually counts based on Good-Turing Discounting. A cluster is a group of words (sometimes a large number) having the same likelihood of appearing in the prediction model.
 
