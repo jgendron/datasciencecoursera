@@ -103,7 +103,7 @@ rm(list = ls()) #clean environment
 # Understanding the Problem
 
 A most important aspect at the outset of a data analysis project is to understand the problem. With the advent of social media and blogs, the information value of raw text continues to increase. The problem that exists is in analyzing a large corpus of text to discover the structure and arrangement of words within the data in order to analyze the corpus using computational methods. 
-The essence of this project is to take a corpus (a bodey) of text from various sources, clean and analyze that text data, and build a predictive model to present the next likely word in a stream of text provided by a user. User input could range from formal, professional communication to informal, short messages - such as social media. Therefore, knowledge of the data sources in the corpus is essential. As a concrete example, a user may type into their mobile device - "I would like to". A predictive text model would present the most likely options for what the next word might be such as *"eat"*, *"go"*, or *"have"* - to name a few.
+The essence of this project is to take a corpus (a body) of text from various sources, clean and analyze that text data, and build a predictive model to present the next likely word in a stream of text provided by a user. User input could range from formal, professional communication to informal, short messages - such as social media. Therefore, knowledge of the data sources in the corpus is essential. As a concrete example, a user may type into their mobile device - "I would like to". A predictive text model would present the most likely options for what the next word might be such as *"eat"*, *"go"*, or *"have"* - to name a few.
 
 Data sciences are increasingly making use of Natural Language Processing combined with statistical methods developed within the arts and humanities decades ago to characterize and leverage the streams of data that are text based and not inherently quantitative. There are many techniques available within the R programming language to work with text to work with them quantitatively. A key aspect of this project is to discern which techniques best promote accuracy and scalability for large data sets.
 
@@ -164,7 +164,7 @@ myCorpus <- PCorpus(DirSource("training", encoding="UTF-8",mode="text"),
                     dbControl=list(dbName="myCorpus.db", dbType="DB1"))
 ```
 
-A preliminary exploration of the corpus indicated a number of transformations were required on the raw data to prepare it for statistical modeling. The data set was cleaned using over 20 transformations that pre-processed the data for analysis. <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a> fully presents each of the transformations in detail. In general, those transformations included: conversion to lower case, ensuring apostrophes were retained to maintain contractions, include end-of-sentence <EOS> and number <NUM> tags, conversion of various ASCII codes to appropriate language wordforms, remove punctuation except apostrophe and <> symbols in <EOS> and <NUM>, remove web URLS, remove numbers, and remove excess whitespace. Intermittently in the process, the corpus was written back to disk and the database was re-initialized using the `filehash` package to reduce the size of data processing in RAM. Although one third of the way through processing the corpus had exceeded 1 GB in RAM, use of `filehash` kept this well below that. The final corpus of over 539,573 blog documents after all processing only 108 MB. It is worth noting the original data set of 899,288 blogs was over 205 MB.
+A preliminary exploration of the corpus indicated a number of transformations were required on the raw data to prepare it for statistical modeling. The data set was cleaned using over 20 transformations that pre-processed the data for analysis. <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a> fully presents each of the transformations in detail. In general, those transformations included: conversion to lower case, ensuring apostrophes were retained to maintain contractions, remove numbers, and remove excess whitespace. Intermittently in the process, the corpus was written back to disk and the database was re-initialized using the `filehash` package to reduce the size of data processing in RAM. Although one third of the way through processing the corpus had exceeded 1 GB in RAM, use of `filehash` kept this well below that. The final corpus of over 539,573 blog documents after all processing only 108 MB. It is worth noting the original data set of 899,288 blogs was over 205 MB.
 
 ``` {r 1b-readTraininSettoClean, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
@@ -277,7 +277,14 @@ Diversity | Corpus | 22.68 | 45.22 | 72.56 | 103.84 | 163.43 | 172.10 | 179.05
 TTR       |  Blog  |  0.51 |  0.31 |  0.18 |   0.08 |   0.04 |   0.03 |   0.03
 TTR       | Corpus |  0.49 |  0.29 |  0.15 |   0.07 |   0.04 |   0.03 |   0.03
 
-``` {r 2-buildOneGramModel, echo=FALSE, eval=TRUE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
+Understanding the distribution among the word tokens helps shape expectations of the linguistic model. An N-Gram refers to the number of words in a string. This project will work on a 3-Gram model. The basic building blocks of that model are unigrams (N: n=1), bigrams (N: n=2), and trigrams (N: n=3). The code developed to build each of these three N-Gram models is available in these appendices:
+
+* <a href="#c-1-building-the-1-gram-unigram-model">C-1: Building the 1-Gram (unigram) Model</a>
+* <a href="#c-2-building-the-2-gram-bigram-model">C-2: Building the 2-Gram (bigram) Model</a> 
+* <a href="#c-3-building-the-3-gram-trigram-model">C-3: Building the 3-Gram (trigram) Model</a>
+
+
+``` {r 2-buildOneGramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE,message=FALSE}
 ##
 ## Code uses blogTrain.txt to generate list of all 1-gram (unigrams)
 ##
@@ -665,11 +672,11 @@ write.csv(S1,"singleTriGrams.csv")
 rm(S1,S2)
 ```
 
-Understanding the distribution among the word tokens helps shape expectations of the linguistic model. An N-Gram refers to the number of words in a string. This project will work on a 3-Gram model. The basic building blocks of that model are unigrams (N: n=1), bigrams (N: n=2), and trigrams (N: n=3). A glimpse at the distribution of the frequencies of each of these word forms is provided in Figure 1. 
+A glimpse at the distribution of the frequencies of each of these word forms is provided in Figure 1. 
 
 *Figure 1: Distributions of three N-Gram models*
 
-``` {r preparePlotData, echo=FALSE, cache=TRUE}
+``` {r preparePlotData, echo=FALSE, eval=FALSE, cache=TRUE}
 ##
 ## Read in necessary outputs describing the N-Grams
 # read in 1-gram information
@@ -687,90 +694,75 @@ threegramDF<-threegramDF[order(threegramDF$counts,decreasing=T),]
 threegramDF$counts<-as.numeric(threegramDF$counts)
 ```
 
-```{r generateDistibution plots, echo=FALSE, fig.height=2.5, cache=TRUE}
+```{r generateDistibution plots, eval=FALSE, echo=FALSE, fig.height=2.5, cache=TRUE}
 ## Plot distributions of N-Grams
 par(mfrow=c(1,3))
 distUni<-round(0.5*dim(unigramDF)[[1]])
 distBi<-round(0.5*dim(twogramDF)[[1]])
 distTri<-round(0.5*17021221 )
 
-barplot(log10(unigramDF$counts[1:distUni]+.1),ylab="log10 (Frequency)",xlab="Top 50% of 1-Grams", border="darkslateblue",ylim=c(.00001,5))
-barplot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",xlab="Top 50% of 2-Grams", border="darkslateblue",ylim=c(.00001,5))
-barplot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",xlab="Top 50% of 3-Grams", border="darkslateblue",ylim=c(.00001,5))
+plot(log10(unigramDF$counts[1:distUni]),ylab="log10 (Frequency)",
+        xlab="Top 50% of 1-Grams", col="darkslateblue",ylim=c(.00001,6))
+plot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",
+        xlab="Top 50% of 2-Grams", col="darkslateblue",ylim=c(.00001,6))
+plot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",
+        xlab="Top 50% of 3-Grams", col="darkslateblue",ylim=c(.00001,6))
+
+# barplot(log10(unigramDF$counts[1:distUni]+1),ylab="log10 (Frequency)",
+#         xlab="Top 50% of 1-Grams", border="darkslateblue",ylim=c(.00001,6))
+# barplot(log10(twogramDF$counts[1:distBi]),ylab="log10 (Frequency)",
+#         xlab="Top 50% of 2-Grams", border="darkslateblue",ylim=c(.00001,6))
+# barplot(log10(threegramDF$counts[1:distTri]),ylab="log10 (Frequency)",
+#         xlab="Top 50% of 3-Grams", border="darkslateblue",ylim=c(.00001,6))
 ```
 
-Prior to plotting, the frequencies were sorted in decreasing order and the x-axis is an index. Therefore, the far left of each plot indicates an N-Gram with the highest frequency. Notice a few features of the data. Although there are far fewer unigrams (198,576) than bigrams (3,525,643), than trigrams (17,021,221), they distributions are more there are a much more skewed right as the level of N increases. This indicates very long tails (more frequencies of 1, 2, etc.) but at the same time much higher frequencies of particular words (such as "the", "and", "to", etc.). The three plots are all logarithmic in the y-axis and set at a common y-axis limit to aid in comparison.
+Prior to plotting, the frequencies were sorted in decreasing order and the x-axis is an index. Therefore, the far left of each plot indicates an N-Gram with the highest frequency. Notice a few features of the data. Although there are far fewer unigrams (198,576) than bigrams (3,525,643), than trigrams (17,021,221), they distributions are more there are a much more skewed right as the level of N increases. This indicates very long tails (more frequencies of 1, 2, etc.) but at the same time much higher frequencies of particular words (such as "the", "and", "to", etc.). The three plots are all logarithmic in the y-axis and set at a common y-axis limit to aid in comparison. In logarithmic scale log10(1)=0. Figure 1 gives an idea of how many singletons exist:
+* within the first half of all unigrams, no frequencies of "1" are seen
+* for bigrams, single frequencies occur at about 30 percent (around 750,00)
+* for trigrams, single frequencies occur after only 10 percent of 3-grams 
+appear (of note, all single 3-grams were removed from the dataframe due to RAM 
+- therefore, no plot points appear at log10(frequency)=0)
 
-Jurafsky and Martin (2000) also describe the importance of "frequencies of frequencies". This is the frequency of the frequency 20 (let's say) occuring. Those tables were generated based on. "In other words, we examine Nc, the number of N-grams that occur c times. We refer to the number of N-grams that occur c times as the frequency of frequency c" (Jurafsky & Martin, p. 212). The frequencies of frequencies view of the corpus is an important feature for N-Grams because these counts enable predictions of other words. The frequencies reduce rapidly comparing unigrams to trigrams. Information from th e literature indicate that these frequency tables respond well to regression analysis to smooth out the information and avoid having to keep all the data in storage. A visualization of these frequencies is provided in Figure 2.
+Jurafsky and Martin (2000) also describe the importance of "frequencies of frequencies". This is the frequency of the frequency 20 (let's say) occuring. Those tables were generated based on. As a concrete example, assume the 1-gram "cat" appeared three times in the corpus. Also, assume that the words "dog", "flower", and "automobile" appeared three times in the corpus. The frequency of frequency for k equal to three is the value four. In other words, the frequency "three" appeared four times. Hence, the term frequency of frequencies. Hence the term "frequency of frequencies". In other words, we examine Nc, the number of N-grams that occur c times. We refer to the number of N-grams that occur c times as the frequency of frequency c" (Jurafsky & Martin, p. 212). The frequencies of frequencies view of the corpus is an important feature for N-Grams because these counts enable predictions of other words. The frequencies reduce rapidly comparing unigrams to trigrams. Information from th e literature indicate that these frequency tables respond well to regression analysis to smooth out the information and avoid having to keep all the data in storage. A visualization of these frequencies is provided in Figure 2.
 
 *Figure 2: Viewing frequencies of frequencies of various N-Grams*
 
-``` {r freqFreq, echo=FALSE, fig.height=2.5, cache=TRUE}
-# uni.freqfreq<-read.csv("uni.freqfreq.csv")[,-1]
-# bi.freqfreq<-read.csv("bi-freqfreq.csv")[,-1]
-# tri.freqfreq<-read.csv("tri-freqfreq.csv")[,-1]
-# par(mfrow = c(1,3))
-# scatter.smooth(uni.freqfreq$Uni.Var, log10(uni.freqfreq$Uni.Freq), ylab="log10 (freqency of freqency)", xlab= "unigram" ,ylim=c(.00001,10))
-# scatter.smooth(bi.freqfreq$Bi.Var, log10(bi.freqfreq$Bi.Freq), ylab="log10 (freqency of freqency)", xlab= "bigram",ylim=c(.00001,10))
-# scatter.smooth(tri.freqfreq$Tri.Var, log10(tri.freqfreq$Tri.Freq), ylab="log10 (freqency of freqency)", xlab= "trigram",ylim=c(.00001,10))
-
-
+``` {r freqFreq, echo=FALSE, eval=FALSE, fig.height=2.5, cache=TRUE}
 par(mfrow = c(1,3))
 uni.freqfreq<-read.csv("uni.freqfreq.csv")
 bi.freqfreq<-read.csv("bi-freqfreq.csv")
 tri.freqfreq<-read.csv("tri-freqfreq.csv")
 #hist(log10(uni.freqfreq$Uni.Freq),breaks=28)
 library(scales)     
-scatter.smooth(log10(uni.freqfreq$Uni.Var), log10(uni.freqfreq$Uni.Freq), ylab="log10 (freqency of freqency)", xlab= "log10 (unigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
-scatter.smooth(log10(bi.freqfreq$Bi.Var), log10(bi.freqfreq$Bi.Freq), ylab="log10 (freqency of freqency)", xlab= "log10 (bigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
-scatter.smooth(log10(tri.freqfreq$Tri.Var), log10(tri.freqfreq$Tri.Freq), ylab="log10(freqency of freqency)", xlab= "log10 (trigram count)",col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+scatter.smooth(log10(uni.freqfreq$Uni.Var), log10(uni.freqfreq$Uni.Freq),
+               ylab="log10 (freqency of freqency)",xlab="log10 (unigram count)",
+               col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+scatter.smooth(log10(bi.freqfreq$Bi.Var), log10(bi.freqfreq$Bi.Freq),
+               ylab="log10 (freqency of freqency)", xlab="log10 (bigram count)",
+               col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
+scatter.smooth(log10(tri.freqfreq$Tri.Var), log10(tri.freqfreq$Tri.Freq),
+               ylab="log10(freqency of freqency)", xlab="log10 (trigram count)",
+               col=alpha("black",0.1),ylim=c(.000001,7),xlim=c(.000001,6))
 ```
-
-
-
-
-
-```{r GTCounts, echo=FALSE}
-knitr::kable(GTCount)
-```
-
- 
-``` {r wordCounts, echo=FALSE, cache=TRUE}
-oneGram <- ngram(1)
-twoGram <- ngram(2)
-threeGram <- ngram(3)
-```
-
-``` {r showCounts, echo=FALSE}
-head(oneGram,10)
-head(twoGram,10)
-head(threeGram,10)
-```
-
-``` {r capturePercent, echo=FALSE, eval=FALSE}
-length(unigramDF$counts)
-sum(unigramDF$counts)*.5
-sum(unigramDF[1:133,]$counts)  #133/9310 = .014 of words for 50% of V
-sum(unigramDF$counts)*.9
-sum(unigramDF[1:4628,]$counts) #4628/9310 = .497 of words for 90% of V
-```
-
-
-Some words occur more frequently than others. Based on these outputs, specifically the unigrams, it is interesting to note that the first 133 unique word types (T) (sorted by frequency of occurrence) covers 50% of V –- it takes only 1.5% of words T to represent half the vocabulary V. Likewise, Ninety percent of vocabulary is covered with 4,625 of 9,310 total words. A distribution for each n-gram is presented in the figure below, indicating the frequency of each word based on Word Types and sorted from "most seen" to "least seen" word. The figure is truncated at the first 50 words. The frequency distributions decrease by an order of magnitude from unigrams to bigrams to trigrams. 
-
-
-
 
 # Statistical Modeling
 
+The overall method used two generate the first model is based on the techniques we learned in the specialization course. Specifically to take the full corpus and break it up into a training set, a developmental test set, and a test set (terms from Jurafsky and Martin). The objective of the modeling phase is to create a model that has that balances accuracy with speed and scalability given that we expect a very large data set and the working corpus. Then we can can revise algorithms to improve either accuracy, speed, or both if possible.
+
 **Predictive modeling**
 
+As noted in the literature review, the strategy selected was to build an N-Gram model augmented with Good Turing Smoothing methods. Initially, it appeared a full Markov matrix would be necessary; however, it was the Markovian properties afforded by N-Gram modeling. In other words, it does not matter the length of the phrase – one can predict a word on a trigram, bigram, or even unigram (Jurafsky and Martin, 2000).
 
-**Creative exploration**
+Continuing with the cleaned and explored corpus, the `tau` package in the R programming environment was used to tokenize and build N-Grams at the N:n=1, 2, and 3 levels. This proved to be a very efficient way to store the data because it collapsed entire matrices into small number of columns (between three and five), albeit having very long numbers of observations. To give an idea of the size of the N-Ggrams the table below shows the number of observations for the 1-, 2-, 3-Gram models.
 
+N-Gram |  Instances
+------ | -----------
+1-Gram |    198,576
+2-Gram |  3,525,643
+3-Gram | 17,021,221
 
-
-
+Having these N-Gram models in dataframes, a Good-Turing matrix was generated. As noted in Jurafsky and Martin (2000), any N-gram with a frequency less than (K:k=5) is an ideal candidate to recomputed counts using Good-Turing methods. N-Grams appearing six or more times are seen to be realistic and do not require smoothing. The power of the Good-Turing method is that it allows us to calculate a probability of the unseen N-Gram. In order to do this it must discount the probabilities of the seen N-Grams in order for the probabilities to add up to one. As mentioned above, discounting in this predictive model was applied to all frequencies of frequencies between the numbers one in five. Those discounted probabilities go towards the probability that the N-Gram appears zero times. Details on the code used in the Good Turing algorithm is available in <a href="#appendix-d---implementing-good-turing-smoothing">Appendix D - Implementing Good-Turing Smoothing</a>. The Good-Turing Smoothing matrix for this model is presented in Table 4.
+ 
 ``` {r 5-generateGTmatrix, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ##
 ## Generates Good-Turing matrix for prediction model
@@ -850,6 +842,41 @@ rm(threegramDF,tri.freqfreq)
 
 rm(list=ls())
 ```
+
+*Table 4: Good Turing Smoothing matrix for predictive model*
+  
+ count |   uni    |       bi    |	   tri
+----- | -------- | -------- | --------
+  0   |   1.28   | 4.74E-05 |	7.81E-10
+  1	 |   0.30   |   0.24   |	  0.17
+  2	 |   1.32   |	 1.15   |	  0.22
+  3	 |   2.39   |	 2.13   |	  3.44
+  4   |	3.36   |	 3.13   |	  3.21
+  5   |   4.30   |   4.15   |	  4.29 
+
+The first prototype of the predictive model was run against test data. At this point, Katz back off approaches had been researched but were not implemented in the algorithms. The basic flow of the user interface with the algorigthm:
+
+* the user inputs two words (a 2-gram) to the `predict` function – with the goal of see ideas of a third word
+* the 2-gram is searched for in the trigram model lookup table
+* if that 2-gram does not exist, a simple message appears that the word did not exist in the lookup table (in prototype only)
+* if the bigram is found, a subset of all 3-grams starting with that 2-gram are generated
+* the algorithm next uses the Good-Turing Smoothing model to update the count for each element of the subset where (K:k < 5)
+* the probability of the resulting trigram options is calculated by dividing the count of the trigram by the count of the bigram
+
+The algorithm allowed for an accumulation of possible third words within 10 clusters (fixed during prototyping). During early runs of the algorithm with very a small corpus, there were many times when the probability of the third most likely word had up to 14 different options. As the corpus used in the model grew, the stratification of these probabilities was expected to become more granular. Allowing the user to see an adjustable number of clusters would be a value proposition for the user.
+
+Having created this first predictive model it was run against an exercise provided by the instructors and additional test sets. The early predictive model - using a small corpus of 30,000 articles and documents - resulted in an accuracy of about 20 percent.
+
+**Creative exploration**
+
+Having a prototype allows for creativity and practicality to merge. First, the corpus used was increased to the full 60 percent training set of blog posts. Very quickly – and unfortunately – it was clear the preprocessing to develop the N-Gram matrices was not scalable. In other words, the lengths the number of observations (rows) vastly exceeded the physical RAM capabilities of 4 GB. This required an improvement in the approach to the algorithm to improve the basic preprocessing. Although, it was believed that the prediction algorithm will run as efficiently once the N-Gram models are brought into proper size. Revisions to the prototype data cleaning were implemented to: include end-of-sentence <EOS> and number <NUM> tags, conversion of various ASCII codes to appropriate language wordforms, remove punctuation except apostrophe and <> symbols in <EOS> and <NUM>, and remove web URLS. The full code of all cleaning processes is visible in <a href="#appendix-b---reading-in-the-data-and-cleaning">Appendix B - Reading in the Data and Cleaning</a>. These adaptations had the desired effect. The 60% training blog set could be fully processed within R. 
+
+Another very important change was that in developing the trigram table processing it exceeded the physical RAM memory. The large number of single trigrams was removed from the dataframe. Although the results of this were seen in Figures 1 and 2, the singletons were not removed until after prototyping. Upon inspection, most of the singletons were very rare and odd combinations of words. The algorithm for preprocessing was adjusted to find all the single trigrams frequencies and remove them from the table. This process was not straightforward. One had to keep RAM limitations in mind. Therefore, it was accomplished in a series of iterative chunks – taking a subset of 10,000 documents at a time, processing them, and then using the `aggregate`, `merge`, and `rbind` functions of R. For the 60 percent training corpus, this required 54 For Loops and generated 54 individual data frames. 
+
+Those 54 dataframes were then slowly condensed through the `merge` function to accumulate all of the counts so as to not eliminate a single trigram if it appeared in one data frame when it actually could appear and others. Once all the data frames were consolidated - and consolidated - and consolidated again, the total number of single trigrams amounted to over 15,000,000 trigrams. The final dataframe of trigrams for the model ended up being 1,464,904 observations. Reducing the dataframe increased speed and scalability. As for accuracy, this update model was run against the test sets and it increased accuracy to approximately 40 percent.
+
+One last modification is worth discussing. The size of the three dataframes was a concern when loading it into a web-based environment. The initial and revised model used a design relying on a two-gram and a three-gram data frame. This amounted to 170.8 MB of data. Some experimentation was conducted to discern the effect of adding end of sentence markers <EOS>. This had a significant result and reduced the table sizes by 20 – 30 percent in terms of overall numbers of observations. An idea then emerged to eliminate the two-gram table from the model. Its purpose was a lookup table to determine if there were any 3-grams in the model. It was realized that the three-gram model already contained all the 2-grams and 1-grams. A simple `grep` command allowed the dataframe to expand on the server side to include the bigram and the unigram.
+
 
 ``` {r 6-predictingngramModel, echo=FALSE, eval=FALSE,warning=FALSE,error=FALSE,cache=TRUE}
 ########
@@ -1025,7 +1052,9 @@ First, I would like to very much like to thank my wife - my parter - for all her
 
 # References
 
-Feinerer, I. Hornik, K., & Artifex Software. (2014, June 11). Tm: Text mining package (Version 0.6) [Software]. Available from [http://cran.r-project.org/web/packages/tm/index.html]( http://cran.r-project.org/web/packages/tm/index.html).
+Buchta, C., Hornik, K, Feinerer, I., & Meyer, D. (2014, June 11). tau: Text analysis utilities (Version 0.0-18) [Software0. Available from [http://cran.r-project.org/web/packages/tau/index.html]( http://cran.r-project.org/web/packages/tau/index.html).
+
+Feinerer, I. Hornik, K., & Artifex Software. (2014, June 11). tm: Text mining package (Version 0.6) [Software]. Available from [http://cran.r-project.org/web/packages/tm/index.html]( http://cran.r-project.org/web/packages/tm/index.html).
 
 Feinerer, I., Hornik, K., & Meyer, D. (2008, March). Text mining infrastructure in R. *Journal of Statistical Computing*, 25(5). Retrieved from [http://www.jstatsoft.org/v25/i05/paper](http://www.jstatsoft.org/v25/i05/paper).
 
