@@ -3,13 +3,38 @@ November 1, 2014
 
 Jay's ideas:
 
+---
+title: "Capstone Recognition"
+author: "Dry Run Participants"
+date: "4 November 2014"
+output: pdf_document
+---
+
+Press Release on Completion of first Dry Run of Data Science Capstone course
+November 1, 2014
+
+Jay's ideas:
+
 Introduction
-  explanation of coursera, MOOC, and data science
+------------
+The past few years has seen the explosion of the MOOC phenomenon. These Massive Open Online Courses bring closer the day when worldclass education is available to anyone on the planet for free. The [Coursera platform](https://www.coursera.org/about/) was set up with precisely this aim.
 
-What: explain the capstone course . also what it took to get to that point and how many were involved
+Data Science Specialization
+---------------------------
 
-So what: explain why the capston is important (challenge, credibility of program, realworld experience). provide quote
+The [Johns Hopkins Bloomberg School of Public Health](http://www.jhsph.edu/about/). This is the largest school of public health in the world, receives 20 percent of all grants and contracts awarded to the 50 accredited U.S. schools of public health, and has been ranked No. 1 by U.S. News & World Report since 1994.
 
-now what: highlight the results. provide some anecdotal quote from participant
+In July 2014, as part of their continuing education mission, they launched eight new Data Science courses (MOOCs) in collaboration with Coursera. More than 500,000 people have registered for these. These covered all the steps required in for participants to develop expertise in Data Science, and are grouped as the [Data Science Specialization](https://www.coursera.org/specialization/jhudatascience/1?utm_medium=listingPage).
 
-Closure: Note the first official capstone began october 27. We would like to thank our dry run participants for their dedication to a good cause..blah blah blah
+The Captone Project
+-------------------
+
+The cherry on the top of this specialization is the Capstone Project. This presented a difficult real-world challenge that stretched participants to their limits. This involved using a messy textual dataset of web-based material to develop a predictive language model, such as that used on a mobile device. The challenge was developed in conjunction with [Swiftkey](http://swiftkey.com/en/), a commercial firm that specializes in this area.
+
+Natural language processing is a notoriously difficult problem. The flexibility of language structure, spelling variations and abbreviations, use of multiple languages et.c. all added to the difficulties. The project aim was to produce a working language model so that this could be integrated into a web application.
+
+25 trail-blazers have now completed the dry run for the Capstone Project. These were hand-picked from the most outstanding students over the 8 Data Specialization Courses. All rose to the challenge magnificently, and some of the projects were truly outstanding. We salute their achievement.
+
+**?add a link to the best webapp here**
+
+**?list of names for those on the Capstone Project dry run**
