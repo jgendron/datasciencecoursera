@@ -29,7 +29,7 @@ In July 2014, as part of their continuing education mission, they launched nine 
 The Captone Project
 -------------------
 
-This is the cherry on the top of this specialization. It presented a difficult real-world challenge that stretched participants to their limits. This involved using a messy textual dataset of web-based material to develop a predictive language model, such as that used on a mobile device. The challenge was developed in conjunction with [Swiftkey](http://swiftkey.com/en/), a well known company leader in Natural Language Processing predictive analytics with their mobile keyboard product.
+The Capstone is the cherry on the top of this specialization. It presented a difficult real-world challenge that stretched participants to their limits. This involved using a messy textual dataset of web-based material to develop a predictive language model, such as that used on a mobile device. The challenge was developed in conjunction with [Swiftkey](http://swiftkey.com/en/), a well known commercial leader in the field, whose mobile keyboard product uses Natural Language Processing predictive analytics.
 
 Natural language processing is a notoriously difficult problem. The flexibility of language structure, spelling variations and abbreviations, use of multiple languages et.c. all added to the difficulties. The project aim was to produce a working language model so that this could be integrated into a web application.
 
