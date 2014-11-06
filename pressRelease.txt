@@ -38,7 +38,8 @@ Natural language processing is a notoriously difficult problem. The flexibility 
 Quotes from Participants
 ------------------------
 Gianfranco says: "Personally, I approached this process of specialization with the enthusiasm given by the combination of an exciting topic of training with the prestigious award that the JHU offers. The challenge has been demanding as expected, I really enjoyed the selection of a topic never addressed in the courses taken, and at the same time highly successful and which are expected to further growth in the near future. I can not think of a better choice. I have to thank all my classmates for their excellent cooperation and sharing that has dramatically enhanced the overall learning experience."
-
+Jay says: "It is hard to describe in few words how powerfully the overall Data Science Specialization program has impacted my life - both professionally and personally. I am using many of the skills honed right now in my work projects. I also been given the opportunity to provide a keynote address to NATO on data science - something I would not have been equipped for without this program. It has been a superb thrill and I must acknowledge all the great people I've had the chance to interact with this year (and for years to come)."
 **?add a link to the best webapp here**
 
 **?list of names for those on the Capstone Project dry run**
+Jay Gendron, SimIS Inc.
