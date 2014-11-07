@@ -31,11 +31,13 @@ https://rodrigodealexandre.shinyapps.io/predictive_text_model
 
 Some quotes from Participants:
 
-Gianfranco Campana says: "Personally, I approached this process of specialization with the enthusiasm given by the combination of an exciting topic of training with the prestigious award that the JHU offers. The challenge has been demanding as expected, I really enjoyed the selection of a topic never addressed in the courses taken, and at the same time highly successful and which are expected to further growth in the near future. I can not think of a better choice. I have to thank all my classmates for their excellent cooperation and sharing that has dramatically enhanced the overall learning experience."
+Gianfranco says: "Personally, I approached this process of specialization with the enthusiasm given by the combination of an exciting topic of training with the prestigious award that the JHU offers. The challenge has been demanding as expected, I really enjoyed the selection of a topic never addressed in the courses taken, and at the same time highly successful and which are expected to further growth in the near future. I can not think of a better choice. I have to thank all my classmates for their excellent cooperation and sharing that has dramatically enhanced the overall learning experience."
 
-Mikel Zurutuza says: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated:
+Mikel: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated:
 Once proposed a new problem, we have been able to achieve a reproducible solution based on technical and scientific knowledge (Engineering). Also we used statistical software, studying computational implications and needed architecture (Computer Science)... Finally, using numbers and based on logical reasoning we proposed and created predictive models and real world solutions (Mathematics).
 In addition, to see how 65 people among world have been generous with each other, be able to share, collaborate and definitely work as a team without having a previous relationship has been very gratifying."
+
+and Daniel : "Many of us started the courses knowing nothing, or too little, about this upward Data Science field, went through a wide set of challenging assessments, a final capstone project and now are ready to work as skilled Data Scientists. It would not be possible without such great classes, fellows' collaboration, and a lot of effort and perseverance. I feel highly honored and thankful for having been part of this!"
 
 Note the first official capstone has started October 27, and last 7 weeks. 
 
