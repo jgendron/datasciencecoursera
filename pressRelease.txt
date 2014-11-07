@@ -27,6 +27,7 @@ About 30 trail-blazers have now completed the dry run for the Capstone Project. 
 
 https://momobo-coursera.shinyapps.io/CapstoneApp/
 https://gianfranco-campana.shinyapps.io/ShinyNLP/
+https://rodrigodealexandre.shinyapps.io/predictive_text_model
 
 Some quotes from Participants:
 
