@@ -37,7 +37,7 @@ Mikel: "I found the entire "Data Science" specialization as a very interesting a
 Once proposed a new problem, we have been able to achieve a reproducible solution based on technical and scientific knowledge (Engineering). Also we used statistical software, studying computational implications and needed architecture (Computer Science)... Finally, using numbers and based on logical reasoning we proposed and created predictive models and real world solutions (Mathematics).
 In addition, to see how 65 people among world have been generous with each other, be able to share, collaborate and definitely work as a team without having a previous relationship has been very gratifying."
 
-and Daniel : "Many of us started the courses knowing nothing, or too little, about this upward Data Science field, went through a wide set of challenging assessments, a final capstone project and now are ready to work as skilled Data Scientists. It would not be possible without such great classes, fellows' collaboration, and a lot of effort and perseverance. I feel highly honored and thankful for having been part of this!"
+and Daniel : "Many of us began the courses knowing nothing, or too little, about this upward Data Science field, went through a wide set of challenging assessments, a final capstone project and now are ready to work as skilled Data Scientists. It would not be possible without such great classes, fellows' collaboration, and a lot of effort and perseverance. I feel highly honored and thankful for having been part of this!"
 
 Note the first official capstone has started October 27, and last 7 weeks. 
 
