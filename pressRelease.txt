@@ -63,5 +63,6 @@ Mykola Steshenko
 Jinning Zhang
 Jorge Vallego
 Mikel Zurutuza
+Rodrigo Bertollo de Alexandre
 
 and a number of other outstanding and collaborative students who helped to make our project a successful real-world project.
