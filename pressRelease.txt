@@ -41,7 +41,7 @@ Note the first official capstone has started October 27, and last 7 weeks.
 
 We would like to thank our Dry Run participants for their dedication to improving and refine the Capstone Project offer, and make it more enjoyable and effective for the participants in the first Official Run.
 
-So, without any particular order, many thanks to:
+So, in surname order, many thanks to:
 
 Daniel Adornes
 Urko Aguirre
@@ -50,19 +50,20 @@ Eduardo Blancas
 Alicia Brown
 Gianfranco Campana
 Yitian Chen
+Rodrigo Bertollo de Alexandre
 Filip Deryckere
 Lakin Ducker
 Gerald Gendron
 Omar Kamal
-Massimo Morelli
 Colin Melville
+Massimo Morelli
 Ramaa Nathan
 Sebastian Popa
 Prashant Ratnaparkhi
 Mykola Steshenko
-Jinning Zhang
 Jorge Vallego
+Jinning Zhang
 Mikel Zurutuza
-Rodrigo Bertollo de Alexandre
+
 
 and a number of other outstanding and collaborative students who helped to make our project a successful real-world project.
