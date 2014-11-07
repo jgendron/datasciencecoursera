@@ -23,25 +23,25 @@ The Capstone is the cherry on the top of the specialization, resulting in a prot
 
 Natural language processing is a notoriously difficult problem. The flexibility of language structure, spelling variations and abbreviations, use of multiple languages et.c. all added to the difficulties. The project aim was to produce a working language model so that this could be integrated into a web application.
 
-30 trail-blazers have now completed the dry run for the Capstone Project. All rose to the challenge magnificently, and we are duly proud of their achievements.
+About 30 trail-blazers have now completed the dry run for the Capstone Project. All rose to the challenge magnificently, and we are duly proud of their achievements, some of which  can be viewed at the following links: 
 
-Quotes from Participants
-------------------------
+https://momobo-coursera.shinyapps.io/CapstoneApp/
+https://gianfranco-campana.shinyapps.io/ShinyNLP/
+
+Some quotes from Participants:
+
 Gianfranco Campana says: "Personally, I approached this process of specialization with the enthusiasm given by the combination of an exciting topic of training with the prestigious award that the JHU offers. The challenge has been demanding as expected, I really enjoyed the selection of a topic never addressed in the courses taken, and at the same time highly successful and which are expected to further growth in the near future. I can not think of a better choice. I have to thank all my classmates for their excellent cooperation and sharing that has dramatically enhanced the overall learning experience."
 
-Mikel Zurutuza said: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated:
-
+Mikel Zurutuza says: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated:
 Once proposed a new problem, we have been able to achieve a reproducible solution based on technical and scientific knowledge (Engineering). Also we used statistical software, studying computational implications and needed architecture (Computer Science)... Finally, using numbers and based on logical reasoning we proposed and created predictive models and real world solutions (Mathematics).
-
 In addition, to see how 65 people among world have been generous with each other, be able to share, collaborate and definitely work as a team without having a previous relationship has been very gratifying."
 
-Some of the Projects
---------------------
-https://momobo-coursera.shinyapps.io/CapstoneApp/
+Note the first official capstone has started October 27, and last 7 weeks. 
 
+We would like to thank our Dry Run participants for their dedication to improving and refine the Capstone Project offer, and make it more enjoyable and effective for the participants in the first Official Run.
 
-Dry Run Participants
---------------------
+So, without any particular order, many thanks to:
+
 Daniel Adornes
 Urko Aguirre
 Tunde Awosanya
@@ -62,3 +62,5 @@ Mykola Steshenko
 Jinning Zhang
 Jorge Vallego
 Mikel Zurutuza
+
+and a number of other outstanding and collaborative students who helped to make our project a successful real-world project.
