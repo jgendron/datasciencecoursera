@@ -7,43 +7,46 @@ output: pdf_document
 
 Introduction
 ------------
-The past few years has seen the explosion of the MOOC phenomenon. These Massive Open Online Courses bring closer the day when worldclass education is available to anyone on the planet for free. The [Coursera platform](https://www.coursera.org/about/) was set up with precisely this aim.
+The past few years has seen the explosion of the MOOC phenomenon. These Massive Open Online Courses (MOOC) bring closer the day when world-class education is available to anyone on the planet for free. The [Coursera platform](https://www.coursera.org/about/) was established to help attain this vision.
 
 Data Science Specialization
 ---------------------------
 
 The [Johns Hopkins Bloomberg School of Public Health](http://www.jhsph.edu/about/) is the largest school of public health in the world, receives 20 percent of all grants and contracts awarded to the 50 accredited U.S. schools of public health, and has been ranked No. 1 by U.S. News & World Report since 1994.
 
-In July 2014, as part of their continuing education mission, they launched nine new Data Science courses (MOOCs) in collaboration with Coursera. More than 800,000 people have now registered for these. These courses covered all the steps required for participants to develop expertise in Data Science, and are grouped as the [Data Science Specialization](https://www.coursera.org/specialization/jhudatascience/1?utm_medium=listingPage). Data science sits at the intersection of Mathematical Statistics, Computer-based Analysis, and Knowledge Engineering, requiring command of all these disciplines. The top 65 students from all [over the world](https://www.google.it/maps/@7.7687399,16.6867948,3z/data=!3m1!4b1!4m2!6m1!1szmall-wQQdEI.ksPEETd3nRFI) with the most outstanding results in all 9 courses were invited to participate in the Dry Run for the Capstone Project.
+In July 2014, as part of their continuing education mission, they launched nine new Data Science courses as MOOCs in collaboration with Coursera. More than 800,000 people have now registered for the program. These courses covered all the steps required for participants to develop expertise in Data Science, and are grouped as the [Data Science Specialization](https://www.coursera.org/specialization/jhudatascience/1?utm_medium=listingPage). Data science sits at the intersection of mathematical statistics, computer-based analytics, and knowledge engineering - requiring skill  of all these disciplines. The top 65 students from all [over the world](https://www.google.com/maps/d/edit?mid=zmall-wQQdEI.ksPEETd3nRFI) with the most outstanding results in all 9 courses were invited to participate in the Dry Run for the Capstone Project.
 
 The Captone Project
 -------------------
 
-The Capstone is the cherry on the top of the specialization, resulting in a prototype project demonstrating a synthesis of all the competences learnt over the preceding months. It presented a difficult real-world challenge that stretched participants to their limits. This involved using a messy textual dataset of web-based material to develop a predictive language model, such as that used on a mobile device. The challenge was developed in conjunction with [Swiftkey](http://swiftkey.com/en/), a well known commercial leader in the field, whose mobile keyboard product uses Natural Language Processing predictive analytics.
+The Capstone is the cherry on the top of the specialization, resulting in a prototype project demonstrating a synthesis of all the competencies learned over the preceding courses. It presented the dry-run participants with a difficult, real-world challenge that stretched them to their limits. This involved using a complex text-based dataset to develop a predictive language model, such as that used on a mobile device. The challenge was developed in conjunction with [Swiftkey](http://swiftkey.com/en/), a well known commercial leader in the field, whose mobile keyboard product uses Natural Language Processing predictive analytics.
 
-Natural language processing is a notoriously difficult problem. The flexibility of language structure, spelling variations and abbreviations, use of multiple languages et.c. all added to the difficulties. The project aim was to produce a working language model so that this could be integrated into a web application.
+Natural language processing is a notoriously difficult problem. The flexibility of language structure, spelling variations and abbreviations, use of multiple languages - among other challenges - all added to the difficulties. The aim of the projectwas to produce a working language model that could be integrated into a web-based data product application.
 
-About 30 trail-blazers have now completed the dry run for the Capstone Project. All rose to the challenge magnificently, and we are duly proud of their achievements, some of which  can be viewed at the following links: 
+About 30 trail-blazers have now completed the dry run for the Capstone Project. All rose to the challenge magnificently, and we are proud of their achievements, some of which  can be experienced  at the following links: 
 
 https://momobo-coursera.shinyapps.io/CapstoneApp/
 https://gianfranco-campana.shinyapps.io/ShinyNLP/
 https://rodrigodealexandre.shinyapps.io/predictive_text_model
+https://jgendron.shinyapps.io/predictngram/ 
 
 Some quotes from Participants:
 
 Gianfranco says: "Personally, I approached this process of specialization with the enthusiasm given by the combination of an exciting topic of training with the prestigious award that the JHU offers. The challenge has been demanding as expected, I really enjoyed the selection of a topic never addressed in the courses taken, and at the same time highly successful and which are expected to further growth in the near future. I can not think of a better choice. I have to thank all my classmates for their excellent cooperation and sharing that has dramatically enhanced the overall learning experience."
 
-Mikel: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated:
+Jay says: "It is hard to describe in few words how powerfully the Data Science Specialization program has impacted my life - both professionally and personally. It was challenging - but struggle has the interesting byproduct of making us better. As I type this and see the SwiftKey options flow beneath my fingers, I have to smile and think back upon the Capstone experience. I also been given the opportunity to provide a keynote address to NATO on data science - something I would not have been equipped for without this program. I am currently using the Data Science skills in my work projects. It has been a superb thrill and I must acknowledge all the great people I've had the chance to interact with this year (and for years to come)."
+
+Mikel: "I found the entire "Data Science" specialization as a very interesting and interdisciplinar topic where 3 big fields are integrated: 
 Once proposed a new problem, we have been able to achieve a reproducible solution based on technical and scientific knowledge (Engineering). Also we used statistical software, studying computational implications and needed architecture (Computer Science)... Finally, using numbers and based on logical reasoning we proposed and created predictive models and real world solutions (Mathematics).
 In addition, to see how 65 people among world have been generous with each other, be able to share, collaborate and definitely work as a team without having a previous relationship has been very gratifying."
 
 and Daniel : "Many of us began the courses knowing nothing, or too little, about this upward Data Science field, went through a wide set of challenging assessments, a final capstone project and now are ready to work as skilled Data Scientists. It would not be possible without such great classes, fellows' collaboration, and a lot of effort and perseverance. I feel highly honored and thankful for having been part of this!"
 
-Note the first official capstone has started October 27, and last 7 weeks. 
+Since the Dry Run completion, the first official Data Science Capstone Course began on October 27 and will last for 7 weeks.
 
-We would like to thank our Dry Run participants for their dedication to improving and refine the Capstone Project offer, and make it more enjoyable and effective for the participants in the first Official Run.
+We would like to thank our Dry Run participants for their dedication to improving and refining the Capstone Project experience to make it more enjoyable and effective for those who will come behind.
 
-So, in surname order, many thanks to:
+The Dry Run participants (in order by surname) included:
 
 Daniel Adornes
 Urko Aguirre
@@ -55,7 +58,7 @@ Yitian Chen
 Rodrigo Bertollo de Alexandre
 Filip Deryckere
 Lakin Ducker
-Gerald Gendron
+Jay Gendron
 Omar Kamal
 Colin Melville
 Massimo Morelli
@@ -68,5 +71,4 @@ Jorge Vallego
 Jinning Zhang
 Mikel Zurutuza
 
-
-and a number of other outstanding and collaborative students who helped to make our project a successful real-world project.
+and a number of other outstanding and collaborative students who helped to make our project a successful real-world project.Many thanks to the participants and all other collborators.
